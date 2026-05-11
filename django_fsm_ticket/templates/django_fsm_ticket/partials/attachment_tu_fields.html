@@ -1,0 +1,15 @@
+{% load i18n %}
+
+<p>
+  {{ ticketupdate.notes|linebreaks }}
+</p>
+{% if ticketupdate.file %}
+	<p>
+		{% if not ticketupdate.deleted or request.user.is_superuser %}
+			{% include 'django_fsm_ticket/partials/icon.html' with icon="it-download" cls="icon" %}
+			<a href="{% url 'ticket_download_attachment' ticketupdate.id ticketupdate.uuid %}">{{ ticketupdate.get_name }}</a>
+		{% else %}
+			{% translate "Attachment" %}: {{ ticketupdate.get_name }}
+		{% endif %}
+	</p>
+{% endif %}

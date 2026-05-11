@@ -1,0 +1,86 @@
+name: 🐛 Bug report
+description: Report a bug or unexpected behavior in django-fsm-ticket
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!  
+        Please fill out the sections below to help us reproduce and fix the issue.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Short description
+      description: A concise summary of the issue.
+      placeholder: e.g. "Transition not triggered when confirming action"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Please list the exact steps that lead to the issue.
+      placeholder: |
+        1. Create a Ticket instance
+        2. Try to trigger the 'approve' transition
+        3. Observe that the state does not change
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+      placeholder: e.g. "The ticket should move from 'new' to 'approved'."
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / error output
+      description: Paste any traceback or log message here (if applicable).
+      render: shell
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: e.g. 3.10.12
+    validations:
+      required: true
+
+  - type: input
+    id: django_version
+    attributes:
+      label: Django version
+      placeholder: e.g. 4.2.7
+    validations:
+      required: true
+
+  - type: input
+    id: fsm_version
+    attributes:
+      label: django-fsm-2 version
+      placeholder: e.g. 4.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: package_version
+    attributes:
+      label: django-fsm-ticket version
+      placeholder: e.g. 0.7.3
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 24.04 / macOS Sonoma / Windows 11
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other information that might help us reproduce or understand the issue.

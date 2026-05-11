@@ -1,0 +1,35 @@
+name: Run tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry install --no-root --all-extras
+
+      - name: Run Ruff checks
+        run: poetry run ruff check .
+
+      - name: Run unit tests
+        run: poetry run python runtests.py

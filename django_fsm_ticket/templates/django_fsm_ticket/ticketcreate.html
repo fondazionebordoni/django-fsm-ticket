@@ -1,0 +1,18 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% block centered_container %}
+	<h2>{% translate "Create a ticket" %}</h2>
+	<form enctype="multipart/form-data" method="post">{% csrf_token %}
+		<p>
+			<table>
+				{{ form.as_table }}
+			</table>
+		</p>
+		<p>
+			<input class="btn btn-primary" type="submit" value="{% translate 'Create' %}">
+			<a class="btn btn-outline-secondary" href="{% url 'all_tickets' root_name %}">{% translate "Cancel" %}</a>
+		</p>
+	</form>
+
+{% endblock %}

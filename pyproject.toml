@@ -1,0 +1,64 @@
+[project]
+name = "django-fsm-ticket"
+version = "1.4.0rc1"
+description = "Simple ticketing and workflow engine based on django-fsm-2"
+readme = "README.md"
+authors = [
+    { name = "Luca Allulli", email = "lallulli@fub.it" },
+    { name = "Elin Wedlund", email = "ewedlund@fub.it" },
+]
+license = { text = "MPL-2.0" }
+requires-python = ">=3.10,<4"
+dependencies = [
+    "django>=4.2",
+    "django-fsm-2>=3.0.0",
+    "django-polymorphic>=3.0.0"
+]
+
+keywords = ["django", "fsm", "workflow", "ticket", "state-machine", "bpm", "low-code"]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL-2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[project.urls]
+Homepage = "https://github.com/fondazionebordoni/django-fsm-ticket"
+Repository = "https://github.com/fondazionebordoni/django-fsm-ticket"
+Documentation = "https://github.com/fondazionebordoni/django-fsm-ticket"
+Issues = "https://github.com/Documentation/django-fsm-ticket/issues"
+
+
+[project.optional-dependencies]
+dev = [
+    "coverage>=7.9.1",
+    "ruff (>=0.14.2,<0.15.0)",
+    "django-constance",
+]
+api = [
+    "djangorestframework>=3.16.1",
+    "django-filter>=25.2",
+]
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+# Only include `django_fsm_ticket` in published package
+# (i.e. exclude `example_project` etc.)
+packages = [
+    { include = "django_fsm_ticket" }
+]

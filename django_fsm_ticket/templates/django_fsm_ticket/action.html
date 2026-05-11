@@ -1,0 +1,19 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% block centered_container %}
+	{% include 'django_fsm_ticket/partials/ticket_content.html' %}
+
+	<form enctype="multipart/form-data" method="post">{% csrf_token %}
+		<p>
+			<table>
+				{{ form.as_table }}
+			</table>
+		</p>
+		<p id="action">
+	    <input class="btn btn-primary" type="submit" value="{{ action.verbose_name }}">
+			<a class="btn btn-outline-secondary" href="{% url 'single_ticket' root_name ticket.pk %}">{% translate "Cancel" %}</a>
+		</p>
+	</form>
+
+{% endblock %}

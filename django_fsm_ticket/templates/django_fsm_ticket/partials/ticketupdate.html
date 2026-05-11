@@ -1,0 +1,10 @@
+{% load i18n %}
+<p>
+	{% if ticketupdate.target_state != ticketupdate.source_state %}
+	<span class="badge badge-secondary bg-secondary">{{ ticketupdate.source_state_verbose }} ▶ {{ ticketupdate.target_state_verbose }}</span>
+	{% endif %}
+	{{ ticketupdate.ts }}
+	{% if ticketupdate.user %} {% translate "by" %} {{ ticketupdate.user_verbose }}{% endif %}
+</p>
+
+{% include ticketupdate.template_fields %}

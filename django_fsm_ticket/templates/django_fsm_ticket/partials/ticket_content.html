@@ -1,0 +1,61 @@
+{% load i18n %}
+
+<h2>#{{ ticket.pk }} {{ ticket.title }} </h2>
+<p>
+	<span class="badge badge-secondary bg-secondary">{{ ticket.state_verbose }}</span>
+	<strong>{% translate "Opened" %}:</strong> {{ ticket.ts }}
+	{% if ticket.user %} {% translate "by" %} {{ ticket.user_verbose }}{% endif %}
+</p>
+
+{% if attachments %}
+	<h3>{% translate "Attachments" %}</h3>
+	<table class="table table-small table-striped small">
+		<caption>{% translate "Attachments" %}</caption>
+		<tr>
+			<th scope="col">{% translate "Date" %}</th>
+			<th scope="col">{% translate "File" %}</th>
+			{% if can_delete %}<th scope="col">{% translate "Delete" %}</th>{% endif %}
+		</tr>
+		{% for a in attachments %}
+				<tr>
+					<td>{{ a.ts }}</td>
+					<td>
+						<a href="{% url 'ticket_download_attachment' a.id a.uuid %}">{{ a.get_name }}</a>
+					</td>
+					{% if can_delete %}
+						<td>
+							<div class="modal fade" id="delete-{{ a.id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+								<div class="modal-dialog" role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title">{% translate "Delete attachment" %}</h5>
+										</div>
+										<div class="modal-body">
+											{% blocktrans with filename=a.get_name %}
+												Do you really want to delete the attachment <strong>{{ filename }}</strong>?
+											{% endblocktrans %}
+										</div>
+										<div class="modal-footer">
+											{# VULN-3: use POST + CSRF for state-changing delete #}
+											<form method="post" action="{% url 'ticket_delete_attachment' a.id a.uuid %}">
+												{% csrf_token %}
+												<button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>
+												<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+											</form>
+										</div>
+									</div>
+									</div>
+								</div>
+
+								<button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete-{{ a.id }}">
+									{% translate "Delete" %}
+								</button>
+
+						</td>
+					{% endif %}
+				</tr>
+		{% endfor %}
+	</table>
+{% endif %}
+
+{% include ticket.template_fields %}

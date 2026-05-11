@@ -1,0 +1,13 @@
+{% autoescape off %}[#{{ ticket.id }} - {{ ticket.state_verbose }}] {{ ticket.title }} - reminder
+Dear {{ user }},
+
+This is a gentle reminder that you have pending work on the following ticket:
+#{{ ticket.id }} ({{ ticket.title }}).
+
+{% include ticketupdate.notification_template %}
+
+You can find further information visiting the following page:
+{{ ticket.full_url }}#ticketupdate-{{ ticketupdate.seq }}
+
+This email has been automatically generated: please do not reply.
+Best regards.{% endautoescape %}

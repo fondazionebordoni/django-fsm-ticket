@@ -1,0 +1,15 @@
+{% load i18n %}
+
+<p>
+	<strong>{% translate "Attachment deleted" %}</strong>:
+	{% if request.user.is_superuser %}
+		<a href="{% url 'ticket_download_attachment' ticketupdate.attachment.id ticketupdate.attachment.uuid %}">{{ ticketupdate.attachment.get_name }}</a>
+	{% else %}
+		{{ ticketupdate.attachment.get_name }}
+	{% endif %}
+</p>
+{% comment %}
+  <p>
+    {{ ticketupdate.notes }}
+  </p>
+{% endcomment %}

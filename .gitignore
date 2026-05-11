@@ -1,0 +1,7 @@
+dist/
+*.pyc
+db.sqlite3
+coverage.xml
+.coverage
+.sonarqube-token
+.scannerwork/

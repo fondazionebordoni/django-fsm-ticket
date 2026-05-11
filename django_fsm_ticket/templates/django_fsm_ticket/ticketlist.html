@@ -1,0 +1,47 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% block centered_container %}
+	<h2>{% translate "Tickets" %}</h2>
+	{% if can_create %}
+		<p>
+			<a class="btn btn-primary btn-sm" href="{% url 'create_ticket' root_name %}">
+				{% translate "Create new ticket" %}
+			</a>
+		</p>
+	{% endif %}
+	{% for c in categories %}
+		<h3>{{ c.category }}</h3>
+		{% if c.ticket_dicts %}
+			<table class="table table-striped mb-4">
+				<caption>List of tickets in category</caption>
+				<tr>
+					<th scope="col" class="default-sort">{% translate "ID" %}</th>
+					<th scope="col" class="default-sort">{% translate "Created" %}</th>
+					<th scope="col">{% translate "Title" %}</th>
+					<th scope="col">{% translate "Creator" %}</th>
+					<th scope="col">{% translate "State" %}</th>
+				</tr>
+			{% for d in c.ticket_dicts %}
+				<tr>
+					<td>
+						<a href="{% url 'single_ticket' root_name d.ticket.pk %}">#{{ d.ticket.pk }}</a>
+					</td>
+					<td>{{ d.ticket.ts|date:"d/m/y H:i" }}</td>
+					<td>{{ d.ticket.title }}</td>
+					<td>{% if d.ticket.user %}{{ d.ticket.user_verbose }}{% endif %}</td>
+					<td><span class="badge badge-secondary bg-secondary">{{ d.ticket.state_verbose }}</span></td>
+				</tr>
+			{% endfor %}
+			</table>
+		{% else %}
+			<p>{% translate "No tickets" %}</p>
+		{% endif %}
+	{% endfor %}
+
+	{% if not show_closed %}
+		<p><a href="?show_closed=1">{% translate "Also show closed tickets" %}</a></p>
+	{% endif %}
+
+{% endblock %}
+

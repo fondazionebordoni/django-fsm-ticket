@@ -1,0 +1,8 @@
+{% load i18n %}
+
+<p>
+	{{ ticket.description|linebreaks }}
+</p>
+<p>
+	<strong>Estimated amount:</strong> {{ ticket.amount|floatformat:"2g" }} €
+</p>

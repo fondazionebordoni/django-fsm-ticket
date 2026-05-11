@@ -1,0 +1,64 @@
+{% extends base_template %}
+{% load i18n %}
+{% load django_fsm_ticket %}
+
+{% block centered_container %}
+
+	<p><a href="{% url 'all_tickets' root_name %}">&laquo; {% translate "Back to ticket list" %}</a></p>
+
+	{% include 'django_fsm_ticket/partials/ticket_content.html' %}
+
+	{% if actions %}
+		<p>
+		{% for a in actions %}
+			{% if a.priority > 0 %}
+				<a
+					{% if a.priority >= 0.5 %}
+						class="btn btn-primary btn-sm"
+					{% else %}
+						class="btn btn-outline-primary btn-sm"
+					{% endif %}
+					href="{% url 'ticket_action' root_name ticket.pk a.name %}#action"
+				>
+					{{ a.verbose_name }}
+				</a>
+			{% endif %}
+		{% endfor %}
+		</p>
+	{% endif %}
+
+	{% if updates %}
+		{% for ticketupdate in updates %}
+			<div class="card-wrapper card-space" id="ticketupdate-{{ ticketupdate.seq }}">
+				<div class="card card-bg card-big border-bottom-card">
+					<div class="card-body">
+						<div class="ticketupdate">
+							{% render_ticket_update ticketupdate request %}
+						</div>
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+
+		{% if actions %}
+			<p>
+			{% for a in actions %}
+				{% if a.priority > 0 %}
+					<a
+						{% if a.priority >= 0.5 %}
+							class="btn btn-primary btn-sm"
+						{% else %}
+							class="btn btn-outline-primary btn-sm"
+						{% endif %}
+						href="{% url 'ticket_action' root_name ticket.pk a.name %}#action"
+					>
+						{{ a.verbose_name }}
+					</a>
+				{% endif %}
+			{% endfor %}
+			</p>
+		{% endif %}
+
+	{% endif %}
+
+{% endblock %}

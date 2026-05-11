@@ -1,0 +1,12 @@
+{% autoescape off %}[#{{ ticket.id }} - {{ ticket.state_verbose }}] {{ ticket.title }} - update
+Dear {{ user }},
+
+Ticket  #{{ ticket.id }} ({{ ticket.title }}) has been updated.
+
+{% include ticketupdate.notification_template %}
+
+You can find further information visiting the following page:
+{{ ticket.full_url }}#ticketupdate-{{ ticketupdate.seq }}
+
+This email has been automatically generated: please do not reply.
+Best regards.{% endautoescape %}

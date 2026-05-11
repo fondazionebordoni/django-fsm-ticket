@@ -1,0 +1,151 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-05 09:32+0200\n"
+"PO-Revision-Date: 2023-10-05 09:38+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.3.2\n"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/base_views.py:120
+msgid "Sorry, an unexpected error occurred. Please try again later."
+msgstr "Purtroppo si è verificato un errore inatteso. Per favore, riprova in seguito."
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:151
+msgid "New"
+msgstr "Nuovo"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:152
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:635
+msgid "Closed"
+msgstr "Chiusi"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:164
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:21
+msgid "Title"
+msgstr "Titolo"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:165
+msgid "Description"
+msgstr "Descrizione"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:170
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:23
+msgid "State"
+msgstr "Stato"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:483
+msgid "Notes"
+msgstr "Note"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:571
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/attachment_tu_fields.html:12
+msgid "Attachment"
+msgstr "Allegato"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:636
+msgid "Open"
+msgstr "Aperti"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/models.py:637
+msgid "Action required"
+msgstr "Azione richiesta"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/action.html:15
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:38
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketcreate.html:14
+msgid "Cancel"
+msgstr "Annulla"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/delete_attachment_tu_fields.html:4
+msgid "Attachment deleted"
+msgstr "Allegato eliminato"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:6
+msgid "Opened"
+msgstr "Aperto"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:7
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticketupdate.html:7
+msgid "by"
+msgstr "da"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:11
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:13
+msgid "Attachments"
+msgstr "Allegati"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:15
+msgid "Date"
+msgstr "Data"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:16
+msgid "File"
+msgstr "File"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:17
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:37
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:45
+msgid "Delete"
+msgstr "Elimina"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/partials/ticket_content.html:31
+msgid "Delete attachment"
+msgstr "Elimina allegato"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticket.html:7
+msgid "Back to ticket list"
+msgstr "Torna alla lista dei ticket"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketcreate.html:5
+msgid "Create a ticket"
+msgstr "Crea un ticket"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketcreate.html:13
+msgid "Create"
+msgstr "Crea"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:5
+msgid "Tickets"
+msgstr "Ticket"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:9
+msgid "Create new ticket"
+msgstr "Crea un nuovo ticket"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:19
+msgid "ID"
+msgstr "ID"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:20
+msgid "Created"
+msgstr "Creato"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:22
+msgid "Creator"
+msgstr "Creatore"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:38
+msgid "No tickets"
+msgstr "Nessun ticket"
+
+#: django-fsm-ticket-submodule/django_fsm_ticket/templates/django_fsm_ticket/ticketlist.html:43
+msgid "Also show closed tickets"
+msgstr "Mostra anche i ticket chiusi"
+
+#~ msgid "Accedi"
+#~ msgstr "Accedi"
+
+#~ msgid "Esci"
+#~ msgstr "Esci"
