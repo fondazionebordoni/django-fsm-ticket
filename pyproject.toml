@@ -7,7 +7,7 @@ authors = [
     { name = "Luca Allulli", email = "lallulli@fub.it" },
     { name = "Elin Wedlund", email = "ewedlund@fub.it" },
 ]
-license = { text = "MPL-2.0" }
+license = "MPL-2.0"
 requires-python = ">=3.10,<4"
 dependencies = [
     "django>=4.2",
@@ -23,7 +23,7 @@ classifiers = [
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL-2.0)",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -38,13 +38,13 @@ classifiers = [
 Homepage = "https://github.com/fondazionebordoni/django-fsm-ticket"
 Repository = "https://github.com/fondazionebordoni/django-fsm-ticket"
 Documentation = "https://github.com/fondazionebordoni/django-fsm-ticket"
-Issues = "https://github.com/Documentation/django-fsm-ticket/issues"
+Issues = "https://github.com/fondazionebordoni/django-fsm-ticket/issues"
 
 
 [project.optional-dependencies]
 dev = [
     "coverage>=7.9.1",
-    "ruff (>=0.14.2,<0.15.0)",
+    "ruff>=0.14.2,<0.15.0",
     "django-constance",
 ]
 api = [
