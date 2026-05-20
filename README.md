@@ -9,7 +9,7 @@ The goal of `django-fsm-ticket` is to provide a __low-code tool__ for creating w
 - The workflow itself (ticket states, state transitions, user permissions, ticket visibility), relying on the simple and rock-solid `django-fsm-2` library.
 
 <p align="center">
-  <img src="docs/img/screenshot_ticket_list.png" width="600" alt="Ticket list">
+  <img src="https://github.com/fondazionebordoni/django-fsm-ticket/raw/main/docs/img/screenshot_ticket_list.png" width="600" alt="Ticket list">
 </p>
 <p align="center">
   <em>Ticket list page, with the Bootstrap Italia theme</em>
@@ -27,7 +27,7 @@ A ticket's behavior is defined through Django models:
 - For each kind of ticket update (you may have several of them, corresponding to different kinds of actions that users may perform), you may define a subclass of `TicketUpdate`; or you may use the base class, which provides the bare minimum fields for an update, such as the update author, a timestamp, and optional notes.
 
 <p align="center">
-  <img src="docs/img/screenshot_ticket_details.png" width="600" alt="Ticket list">
+  <img src="https://github.com/fondazionebordoni/django-fsm-ticket/raw/main/docs/img/screenshot_ticket_details.png" width="600" alt="Ticket list">
 </p>
 <p align="center">
   <em>Details page of a ticket</em>
@@ -89,7 +89,7 @@ class FSM_TICKET_CONFIG:
 
 Here, we are specifying the base url and telling `django_fsm_ticket` to send email notifications to users in charge of taking actions on tickets unless they opted-out from email notifications.
 
-You may want to be able to [configure `django_fsm_ticket` via the Django admin interface](#constance) by using `django-constance`.
+You may want to be able to configure `django_fsm_ticket` via the Django admin interface by using `django-constance`, as discussed in the tutorial.
 
 Finally, in your project-level `urls.py` file, add a urlconf for `django-fsm-ticket`:
 
@@ -111,12 +111,12 @@ urlpatterns = [
 
 New to `django-fsm-ticket`? We recommend starting with our beginner-friendly tutorial:
 
-👉 Read the [docs/TUTORIAL.md](docs/TUTORIAL.md)
+👉 Read the [docs/TUTORIAL.md](https://github.com/fondazionebordoni/django-fsm-ticket/blob/main/docs/TUTORIAL.md)
 
 
 ## Example project
 
-If you'd like to explore a fully working example, we offer a [demo Django project](./example_project/).
+If you'd like to explore a fully working example, we offer a [demo Django project](https://github.com/fondazionebordoni/django-fsm-ticket/tree/main/example_project).
 
 You can run the project locally by cloning the repository and executing the following commands:
 
@@ -143,4 +143,4 @@ python manage.py runserver
 
 Want to contribute or submit improvements?  
 
-👉 Read the [CONTRIBUTING.md](./CONTRIBUTING.md)
+👉 Read the [CONTRIBUTING.md](https://github.com/fondazionebordoni/django-fsm-ticket/blob/main/CONTRIBUTING.md)
