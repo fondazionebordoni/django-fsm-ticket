@@ -1,6 +1,6 @@
 [project]
 name = "django-fsm-ticket"
-version = "1.4.0rc1"
+version = "1.4.0"
 description = "Simple ticketing and workflow engine based on django-fsm-2"
 readme = "README.md"
 authors = [
