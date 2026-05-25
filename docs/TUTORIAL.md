@@ -4,7 +4,7 @@ This tutorial demonstrates how to create a basic workflow for handling purchase 
 
 > [!NOTE]  
 > We encourage you to start a project from scratch by following our tutorial.
-> However, you can also find the final result of this tutorial in the `example_project` folder
+> However, you can also find the final result of this tutorial in the `example_project` folder.
 
 
 ## Creating an app
@@ -79,7 +79,7 @@ class PurchaseTicket(Ticket):
 
 Here:
 
-- `root_name` is a name for identifying our workflow. You may have several workflows in your Django project, each with a unique name. The base url for tickets of the flow will be `.../tickets/<root_name>`, e.g. [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) in this example.
+- `root_name` is a name for identifying our workflow. You may have several workflows in your Django project, each with a unique name. The base URL for tickets of the flow will be `.../tickets/<root_name>`, e.g. [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) in this example.
 - `verbose_states` is a dict mapping state names to verbose names. Verbose names will appear in your user interface and may be localized.
 - `closed_states` is a set of "final" states, where the ticket is considered closed, thus disappearing from the list of open tickets in the user interface.
 
@@ -88,7 +88,7 @@ Note that, by default, a ticket is created with a default (start) state of `'new
 
 ## Registering our workflow
 
-To let `django_fsm_ticket` know that we are defining a workflow, we need to register our model `PurchaseTicket` by creating a TicketEngine instance:
+To let `django-fsm-ticket` know that we are defining a workflow, we need to register our model `PurchaseTicket` by creating a `TicketEngine` instance:
 
 ```python
 # purchase/models.py
@@ -181,7 +181,7 @@ For the sake of our tutorial, you can simply copy the following code:
 </html>
 ```
 
-Since our template expects expect the existence of 'login', 'logout' and 'password_change' as url names, we need to set up these urls. In `urls.py`:
+Since our template expects the existence of 'login', 'logout' and 'password_change' as URL names, we need to set up these URLs. In `urls.py`:
 
 ```python
 # urls.py
@@ -214,7 +214,7 @@ Also create a superuser named `admin`:
 python manage.py createsuperuser
 ```
 
-Now, point your browser to [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) and login as `admin`: you will see the list of open tickets, and you will be able to create new purchase tickets (if you give your flow another `root_name` you need to use that in the url). Create at least one ticket, requesting a new PC.
+Now, point your browser to [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) and log in as `admin`: you will see the list of open tickets, and you will be able to create new purchase tickets (if you give your flow another `root_name` you need to use that in the url). Create at least one ticket, requesting a new PC.
 
 
 ```python
@@ -247,7 +247,7 @@ class PurchaseTicket(Ticket):
         return ticket_update
 ```
 
-Here, we are defining a method named `approve` that will be called by `django_fsm_ticket` when the user performs the _approve_ action using the user interface. You may customize your action methods to react to user actions, for example by manipulating your ticket or ticket update instance, but in most cases, your methods will simply receive an instance `ticket_update` of model `TicketUpdate` and return it untouched, as in our example.
+Here, we are defining a method named `approve` that will be called by `django-fsm-ticket` when the user performs the _approve_ action using the user interface. You may customize your action methods to react to user actions, for example by manipulating your ticket or ticket update instance, but in most cases, your methods will simply receive an instance `ticket_update` of model `TicketUpdate` and return it untouched, as in our example.
 
 Our `approve` method has quite a few decorators! Going outward, we notice:
 
@@ -255,9 +255,9 @@ Our `approve` method has quite a few decorators! Going outward, we notice:
   - From `new` to `approved`
   - From `rejected` to `approved` (in case the approver mistakenly rejected a request or changed their mind)
 
-  The _approve_ action will be available only for tickets in the state `new` or `rejected`. Note that the `transition` decorator is part of the `django_fsm` library, where you can find the full documentation of the decorator parameters and behavior.
+  The _approve_ action will be available only for tickets in the state `new` or `rejected`. Note that the `transition` decorator is part of the `django-fsm-2` library, where you can find the full documentation of the decorator parameters and behavior.
 
-- Exactly one `action` decorator, used to register `approve` as a `django_fsm_ticket` _action_. Our action has a couple of optional parameters:
+- Exactly one `action` decorator, used to register `approve` as a `django-fsm-ticket` _action_. Our action has a couple of optional parameters:
   - A `verbose_name`, which will be shown in the user interface, e.g., in the button that the user presses to perform the action;
   - A `priority` float number, ranging from 0 to 1 (0.5 by default). If a user can perform several actions on a ticket, actions with higher priority are shown first.
 
@@ -267,7 +267,7 @@ Open your PC request and approve it, adding a comment "Request approved". Notice
 
 If you go back to your ticket list page, your ticket will now appear in the bottom part of the page because you are no longer in charge of performing an action on the ticket.
 
-As an excercise, write an action `reject` to bring a ticket from state `new` to state `rejected`.
+As an exercise, write an action `reject` to bring a ticket from state `new` to state `rejected`.
 
 
 ## More on ticket priorities. Notifications
@@ -343,9 +343,9 @@ Returning to priorities, an action with __priority 0__ will not generate a butto
 > This section is a bit advanced and usually unnecessary:
 > feel free to skip it on your first pass of the tutorial.
 
-If you are acquainted with the `django_fsm` library, you may have noticed an apparent incongruence. In `django_fsm`, state transitions occur __after__ the execution of the transition method, if and only if no exceptions occur within the method execution. If an exception occurs, the transition is aborted.
+If you are acquainted with the `django-fsm-2` library, you may have noticed an apparent inconsistency. In `django-fsm-2`, state transitions occur __after__ the execution of the transition method, if and only if no exceptions occur within the method execution. If an exception occurs, the transition is aborted.
 
-`django_fsm_ticket` is based on `django_fsm`, and its behavior is the same. Thus, when we call the `notify` method, our ticket instance is still in its __source__ state (which is state `new` in our example). How can `notify` send notifications to the users in charge of the ticket in the destination state? If you open the source code of `django_fsm_ticket`, you will notice that the `notify` method has been decorated with the `@after_transition` decorator, defined in module `django_fsm_ticket.models.py`. A method decorated with `@after_transition` will not be called immediately. Instead, the call will be enqueued and executed _after_ the successful completion of the current transition, when the ticket has migrated to the destination state.
+`django-fsm-ticket` is based on `django-fsm-2`, and its behavior is the same. Thus, when we call the `notify` method, our ticket instance is still in its __source__ state (which is state `new` in our example). How can `notify` send notifications to the users in charge of the ticket in the destination state? If you open the source code of `django-fsm-ticket`, you will notice that the `notify` method has been decorated with the `@after_transition` decorator, defined in module `django_fsm_ticket.models.py`. A method decorated with `@after_transition` will not be called immediately. Instead, the call will be enqueued and executed _after_ the successful completion of the current transition, when the ticket has migrated to the destination state.
 
 A common use of the `@after_transition` decorator is for handling long-running, asynchronous tasks. You can use the following pattern:
 
@@ -387,14 +387,14 @@ The outcome of the task may be attached to the ticket and/or to the [ticket upda
 
 ## <a name="permissions"></a>Permissions
 
-So far, our purchase webapp is neither private nor secure! Everyone can see tickets, and everyone can approve purchase requests. We need some rules:
+So far, our purchase web app is neither private nor secure! Everyone can see tickets, and everyone can approve purchase requests. We need some rules:
 
 1. Authentication is required to open and view tickets.
 2. Superusers can see all the tickets.
 3. Non-superusers can see only the tickets they created.
 4. Only superusers can approve purchase requests.
 
-In `django_fsm_ticket`, we can control:
+In `django-fsm-ticket`, we can control:
 
 - The visibility of each ticket.
 - The visibility of each ticket update.
@@ -418,7 +418,7 @@ class PurchaseTicket(Ticket):
         return self.user == request.user
 ```
 
-When a user loads the ticket list page, `django_fsm_ticket` loops through all the tickets, determining the visibility of each ticket to the current user. To optimize this, we can prefilter the queryset of tickets to exclude tickets that should not be visible to the current user. We can override the `prefilter_visible` class method:
+When a user loads the ticket list page, `django-fsm-ticket` loops through all the tickets, determining the visibility of each ticket to the current user. To optimize this, we can prefilter the queryset of tickets to exclude tickets that should not be visible to the current user. We can override the `prefilter_visible` class method:
 
 ```python
 # purchase/models.py
@@ -439,7 +439,7 @@ class PurchaseTicket(Ticket):
 
 Tickets in the queryset returned by `prefilter_visible` will be double-checked for visibility by calling the `is_visible` method.
 
-To limit the users who can take an action, you can use the `permission` optional attribute of the `django_fsm` `@transition` decorator. `permission` is a callable that takes the ticket instance and the user as parameters and returns `True` if and only if the transition is possible for the given ticket and user. If the transition is forbidden, the action button will not be displayed. Let's add permission to the `approve` action:
+To limit the users who can take an action, you can use the `permission` optional attribute of the `django-fsm-2` `@transition` decorator. `permission` is a callable that takes the ticket instance and the user as parameters and returns `True` if and only if the transition is possible for the given ticket and user. If the transition is forbidden, the action button will not be displayed. Let's add permission to the `approve` action:
 
 ```python
 # purchase/models.py
@@ -470,9 +470,9 @@ The `purchase` action adds an element to the ticket history. The ticket detail p
 What if we wish to add more data to a ticket update? Consider the following scenario: when a requested item is ordered, we want to transition our ticket to the `ordered` state, keeping track of:
 
 - the price
-- the seller name
+- the seller's name
 
-We can choose to add this data either globally to our ticket instance, by adding fields to our `PurchaseTicket` model, or to a custom ticket update model. If we customize our ticket update model, `django_fsm_ticket` will generate the fields in the action form for us, using a Django `ModelForm`.
+We can choose to add this data either globally to our ticket instance, by adding fields to our `PurchaseTicket` model, or to a custom ticket update model. If we customize our ticket update model, `django-fsm-ticket` will generate the fields in the action form for us, using a Django `ModelForm`.
 
 So, first, let's define a custom model, `OrderTicketUpdate`, by deriving from the `TicketUpdate` model:
 
@@ -524,7 +524,7 @@ class PurchaseTicket(Ticket):
 
 Make and apply migrations, log in as a superuser, and perform the `order` action on an approved ticket.
 
-The next step is receiving the item and transitioning to the `purchased` state. In this step, the user should attach an invoice to the ticket. We could define a custom ticket update model with a `FileField` for the invoice, define the custom template, and add a view to handle file download with the proper permissions. However, attaching a file to a ticket update is so common that a ready-to-use ticket update model exists in `django_fsm_ticket`: `AttachmentTicketUpdate`. We just need to define our action method `purchased`:
+The next step is receiving the item and transitioning to the `purchased` state. In this step, the user should attach an invoice to the ticket. We could define a custom ticket update model with a `FileField` for the invoice, define the custom template, and add a view to handle file download with the proper permissions. However, attaching a file to a ticket update is so common that a ready-to-use ticket update model exists in `django-fsm-ticket`: `AttachmentTicketUpdate`. We just need to define our action method `purchased`:
 
 ```python
 # purchase/models.py
@@ -562,7 +562,7 @@ Relative to a `TicketUpdate`, an `AttachmentTicketUpdate` has three additional f
 
 It is useful to keep track of the original filename because Django will alter the stored filename to avoid name clashes. This is exactly what we did in our `purchased` action method.
 
-The template for our `AttachmentTicketUpdate` is already defined in `django_fsm_ticket`, as well as the view that handles file download only for authorized users, so no other configuration is needed. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
+The template for our `AttachmentTicketUpdate` is already defined in `django-fsm-ticket`, as well as the view that handles file download only for authorized users, so no other configuration is needed. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
 
 If you want to allow your users to delete a previously uploaded attachment, simply define this action:
 
@@ -577,7 +577,7 @@ def delete_attachment(self, ticket_update=None):
     return ticket_update
 ```
 
-Being a 0-priority action, `django_fsm_ticket` will not display an action button. However, a delete button will be displayed in the attachment card, next to the file to be deleted (thanks to how the custom partial template works). Make sure to override method `can_delete_attachment` if you wish to restrict users allowed to delete attachments.
+Being a 0-priority action, `django-fsm-ticket` will not display an action button. However, a delete button will be displayed in the attachment card, next to the file to be deleted (thanks to how the custom partial template works). Make sure to override method `can_delete_attachment` if you wish to restrict users allowed to delete attachments.
 
 ## Calling actions programmatically
 
@@ -602,10 +602,10 @@ class PurchaseTicket(Ticket):
 
 ## Further information
 
-In order to learn how to use `django_fsm_ticket` we suggest to:
+In order to learn how to use `django-fsm-ticket`, we suggest that you:
 
-1. Read the documentation of [`django_fsm`](https://github.com/viewflow/django-fsm)
-2. Study the demo project `exmple_project`
+1. Read the documentation of [`django-fsm-2`](https://github.com/django-commons/django-fsm-2)
+2. Study the demo project `example_project`
 3. For advanced customization, read the inline documentation in `django_fsm_ticket/models.py`
 
 
@@ -647,14 +647,14 @@ Users not belonging to one of these groups will receive notifications depending 
 - __0__: Notifications are turned off for all users
 - __1__: Notifications are turned off, but users in `notifications_always` group will still receive notifications
 - __2__ (default): Notifications are turned on, but users in `notifications_never` group will not receive notifications
-- __3__: Notifications are turned all for all users
+- __3__: Notifications are turned on for all users
 
 
 ## REST API
 
 It is also possible to use `django-fsm-ticket` via a REST API, which can be useful for projects that do not use Django views and templates.
 
-In order to avoid circular imports, it is possibile to override `views` and `serializers` by providing the path as a string, allowing the import to be delayed.
+In order to avoid circular imports, it is possible to override `views` and `serializers` by providing the path as a string, allowing the import to be delayed.
 
 
 ### Getting started
@@ -698,7 +698,7 @@ Assuming that `django-fsm-ticket` has been configured under the path `ticket`, a
   - DELETE: delete ticket
 
 - `ticket/api/purchase/{id}/{action}`
-  - PUT/PATCH: apply action the ticket
+  - PUT/PATCH: apply action to the ticket
 
 - `ticket/api/purchase/ticket-update`
   - GET: list of all ticket updates referring to a `PurchaseTicket`
@@ -715,12 +715,12 @@ The endpoint `ticket/api/{root_name}` returns a list of tickets corresponding to
 
 It is possible to provide a custom list serializer specifying `list_serializer` on the `Ticket` class.
 
-It is also possibile to provide a custom view class (is has to provide `as_view()`) by declaring `list_api_view` on the `Ticket` class.
+It is also possible to provide a custom view class (it has to provide `as_view()`) by declaring `list_api_view` on the `Ticket` class.
 
 The default view provides
 
 - pagination using `limit` and `offset`
-- ordering on all fields, the default ordering is descending on the id field
+- ordering on all fields, the default ordering is descending on the `id` field
 - filtering on all fields except `exclude_fields` declared on the `Ticket` class, plus filtering out closed tickets through the `hide_closed` boolean filter
 - searching on the `search_fields` declared on the `Ticket` class
 
@@ -733,11 +733,11 @@ Note that creation is restricted by calling `can_create(user)` on the `Ticket` m
 
 The endpoint `ticket/api/{root_name}/{id}` returns the details of a ticket. The view can be overridden by specifying `detail_api_view` on the `Ticket` class (is has to provide `as_view()`).
 
-It is possible to provide a custom serializer specifying `detail_serializer` on the `Ticket` class. Note however that the default detail serializer provides a list of the `actions` possible on the ticket by the requesting user. If you make your own serializer you will probably want to do that as well. The default serializer also includes all `TicketUpdate`s of the ticket.
+It is possible to provide a custom serializer specifying `detail_serializer` on the `Ticket` class. Note however that the default detail serializer provides a list of the `actions` possible on the ticket by the requesting user. If you make your own serializer you will probably want to do that as well. The default serializer also includes all `TicketUpdate` instances of the ticket.
 
-A `POST` or `PUT` will update the given ticket, the action is restricted by calling `can_modify(user)` on the `Ticket` model.
+A `POST` or `PUT` will update the given ticket; the action is restricted by calling `can_modify(user)` on the `Ticket` model.
 
-The update serializer is the same as for the ticket creation, i.e. can be overridden by specifying `write_serializer`
+The update serializer is the same as for the ticket creation, i.e. can be overridden by specifying `write_serializer`.
 
 A `DELETE` will delete a ticket. This is disabled by default and can be enabled through the `can_delete(user)` on the `Ticket` class.
 
@@ -746,7 +746,7 @@ A `DELETE` will delete a ticket. This is disabled by default and can be enabled 
 
 By making a `PUT` on `ticket/api/{root_name}/{id}/{action}`, the specified action will be applied, using the payload for the creation of the `TicketUpdate`.
 
-The serializer is therefore related to the `ticket_update_model` specified in the `action`, exluding `exclude_fields` on the model (`ts`, `user`, etc are excluded by default). In order to override the serializer you need to specify the `write_serializer` on the ticket update class.
+The serializer is therefore related to the `ticket_update_model` specified in the `action`, excluding `exclude_fields` on the model (`ts`, `user`, etc are excluded by default). In order to override the serializer you need to specify the `write_serializer` on the ticket update class.
 
 Currently this view cannot be overridden.
 
@@ -760,11 +760,11 @@ Each ticket update is serialized separately, using `list_serializer` on the `Tic
 The default view provides
 
 - pagination using `limit` and `offset`
-- ordering on all fields, the default ordering is descending on the id field
+- ordering on all fields, the default ordering is descending on the `id` field
 - filtering on `notes`, `user__id`, `ticket__id`
 - filtering on the `TicketUpdate` type by using the `TicketUpdate` model name in lowercase (e.g. `ticketupdate`); the possible filters are
   - `?type={type}`: only include `TicketUpdate`s of this type
-  - `?type__not={type}`: exlude `TicketUpdate`s of this type
+  - `?type__not={type}`: exclude `TicketUpdate`s of this type
   - `?type__in={type1,type2}`: only include `TicketUpdate`s of any of these types
 - searching is only provided on `notes` since it is the common field of all `TicketUpdate`s
 
