@@ -79,7 +79,7 @@ class PurchaseTicket(Ticket):
 
 Here:
 
-- `root_name` is a name for identifying our workflow. You may have several workflows in your Django project, each with a unique name. The base URL for tickets of the flow will be `.../tickets/<root_name>`, e.g. [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) in this example.
+- `root_name` is a name for identifying our workflow. You may have several workflows in your Django project, each with a unique name. The base URL for tickets of the flow will be `.../ticket/<root_name>`, e.g. [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) in this example.
 - `verbose_states` is a dict mapping state names to verbose names. Verbose names will appear in your user interface and may be localized.
 - `closed_states` is a set of "final" states, where the ticket is considered closed, thus disappearing from the list of open tickets in the user interface.
 
