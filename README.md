@@ -89,6 +89,16 @@ class FSM_TICKET_CONFIG:
 
 Here, we are specifying the base url and telling `django-fsm-ticket` to send email notifications to users in charge of taking actions on tickets unless they opted-out from email notifications.
 
+`django-fsm-ticket` requires authenticated users, so your project also needs the standard Django login settings (see the tutorial for a complete example, including the login views and templates):
+
+```python
+# settings.py
+
+LOGIN_URL = "/login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+```
+
 You may want to be able to configure `django-fsm-ticket` via the Django admin interface by using `django-constance`, as discussed in the tutorial.
 
 Finally, in your project-level `urls.py` file, add a urlconf for `django-fsm-ticket`:

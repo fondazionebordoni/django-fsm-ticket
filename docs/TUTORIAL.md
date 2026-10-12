@@ -197,6 +197,40 @@ urlpatterns = [
 ]
 ```
 
+Django's `LoginView` and `PasswordChangeView` look for the templates `registration/login.html` and `registration/password_change_form.html`, which do not exist yet (without them you will get a `TemplateDoesNotExist` error). Create them in `purchase/templates/registration/`:
+
+```html
+<!-- purchase/templates/registration/login.html -->
+{% extends "base.html" %}
+
+{% block centered_container %}
+<h2>Login</h2>
+<form method="post" action="{% url 'login' %}">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <input class="btn btn-primary" type="submit" value="Login">
+</form>
+{% endblock %}
+```
+
+```html
+<!-- purchase/templates/registration/password_change_form.html -->
+{% extends "base.html" %}
+
+{% block centered_container %}
+<h2>Change your password</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input class="btn btn-primary" type="submit" value="Change my password">
+  <a class="btn btn-outline-primary" href="{% url 'home' %}">Cancel</a>
+</form>
+{% endblock %}
+```
+
+The `home` URL name used here and in `LOGIN_REDIRECT_URL` / `LOGOUT_REDIRECT_URL` is defined in the next section.
+
 
 ## Loading our page
 
@@ -217,12 +251,18 @@ python manage.py createsuperuser
 Now, point your browser to [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) and log in as `admin`: you will see the list of open tickets, and you will be able to create new purchase tickets (if you give your flow another `root_name` you need to use that in the url). Create at least one ticket, requesting a new PC.
 
 
+The `home` URL name, used by `LOGIN_REDIRECT_URL` and `LOGOUT_REDIRECT_URL` and by the templates above, must be defined, otherwise logging in or out fails with a `NoReverseMatch` error. Also, the site root (`/`) is not mapped to anything yet and returns a 404 error. Add both in `urls.py`:
+
 ```python
 # urls.py
+
+from django.urls import reverse_lazy
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
     # ...
     path("home", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="home"),
+    path("", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="root"),
     # ...
 ]
 ```
@@ -489,6 +529,8 @@ class OrderTicketUpdate(TicketUpdate):
     seller = models.CharField(max_length=1000)
 ```
 
+Note that `OrderTicketUpdate` must be defined **before** the `PurchaseTicket` class in `purchase/models.py`: the `@action` decorator that references it is evaluated when the class body is executed, and otherwise you will get `NameError: name 'OrderTicketUpdate' is not defined`.
+
 The `template_fields` variable specifies a custom partial template to display the update card, since our ticket update has additional fields. Let's define our partial template in `purchase/templates/purchase/partials/orderticketupdate_fields.html`:
 
 ```html
@@ -522,7 +564,14 @@ class PurchaseTicket(Ticket):
         return ticket_update
 ```
 
-Make and apply migrations, log in as a superuser, and perform the `order` action on an approved ticket.
+Make and apply migrations (the new `OrderTicketUpdate` model needs its own table, otherwise you will get `no such table: purchase_orderticketupdate`):
+
+```bash
+$ python manage.py makemigrations
+$ python manage.py migrate
+```
+
+Then log in as a superuser, and perform the `order` action on an approved ticket.
 
 The next step is receiving the item and transitioning to the `purchased` state. In this step, the user should attach an invoice to the ticket. We could define a custom ticket update model with a `FileField` for the invoice, define the custom template, and add a view to handle file download with the proper permissions. However, attaching a file to a ticket update is so common that a ready-to-use ticket update model exists in `django-fsm-ticket`: `AttachmentTicketUpdate`. We just need to define our action method `purchased`:
 
@@ -577,7 +626,19 @@ def delete_attachment(self, ticket_update=None):
     return ticket_update
 ```
 
-Being a 0-priority action, `django-fsm-ticket` will not display an action button. However, a delete button will be displayed in the attachment card, next to the file to be deleted (thanks to how the custom partial template works). Make sure to override method `can_delete_attachment` if you wish to restrict users allowed to delete attachments.
+Being a 0-priority action, `django-fsm-ticket` will not display an action button. However, a delete button will be displayed in the "Attachments" table at the top of the ticket page, next to the file to be deleted (not in the card of the ticket update).
+
+The button is only displayed if the method `can_delete_attachment(request)` of your ticket class returns `True`. The default implementation returns `False`, so you **must** override it, otherwise no delete button will ever appear. This method is also checked by the delete view, while the `permission` of the transition only controls who can run the action itself. For example, to allow superusers only:
+
+```python
+# purchase/models.py
+
+class PurchaseTicket(Ticket):
+    # ...
+
+    def can_delete_attachment(self, request):
+        return request.user.is_superuser
+```
 
 ## Calling actions programmatically
 
