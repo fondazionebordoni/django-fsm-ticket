@@ -229,8 +229,21 @@ Django's `LoginView` and `PasswordChangeView` look for the templates `registrati
 {% endblock %}
 ```
 
-The `home` URL name used here and in `LOGIN_REDIRECT_URL` / `LOGOUT_REDIRECT_URL` is defined in the next section.
+The `home` URL name, used by `LOGIN_REDIRECT_URL` and `LOGOUT_REDIRECT_URL` and by the templates above, must be defined, otherwise logging in or out fails with a `NoReverseMatch` error. Also, the site root (`/`) is not mapped to anything yet and returns a 404 error. Add both in `urls.py`:
 
+```python
+# urls.py
+
+from django.urls import reverse_lazy
+from django.views.generic.base import RedirectView
+
+urlpatterns = [
+    # ...
+    path("home", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="home"),
+    path("", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="root"),
+    # ...
+]
+```
 
 ## Loading our page
 
@@ -248,24 +261,7 @@ Also create a superuser named `admin`:
 python manage.py createsuperuser
 ```
 
-Now, point your browser to [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) and log in as `admin`: you will see the list of open tickets, and you will be able to create new purchase tickets (if you give your flow another `root_name` you need to use that in the url). Create at least one ticket, requesting a new PC.
-
-
-The `home` URL name, used by `LOGIN_REDIRECT_URL` and `LOGOUT_REDIRECT_URL` and by the templates above, must be defined, otherwise logging in or out fails with a `NoReverseMatch` error. Also, the site root (`/`) is not mapped to anything yet and returns a 404 error. Add both in `urls.py`:
-
-```python
-# urls.py
-
-from django.urls import reverse_lazy
-from django.views.generic.base import RedirectView
-
-urlpatterns = [
-    # ...
-    path("home", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="home"),
-    path("", RedirectView.as_view(url=reverse_lazy('all_tickets', args=['purchase'])), name="root"),
-    # ...
-]
-```
+Now, point your browser to [http://localhost:8000/ticket/purchase](http://localhost:8000/ticket/purchase) and log in as `admin`: you will see the list of open tickets, and you will be able to create new purchase tickets (if you give your flow another `root_name` you need to use that in the URL). Create at least one ticket, requesting a new PC.
 
 
 ## Adding actions
