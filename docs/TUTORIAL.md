@@ -737,7 +737,17 @@ INSTALLED_APPS = [
 ]
 ```
 
-In your `settings.py` file you may configure an API prefix by setting the `FSM_TICKET_API_PREFIX` constant. The default API prefix is `"api"`.
+Finally, enable the API by setting the `FSM_TICKET_API_PREFIX` constant in your `settings.py` file. The API endpoints will be served under this prefix:
+
+```python
+# settings.py
+
+FSM_TICKET_API_PREFIX = "api"
+```
+
+The prefix must be a non-empty string; leading and trailing slashes are ignored. Set `FSM_TICKET_API_PREFIX = None` to disable the API. `FSM_TICKET_API_PREFIX` is a regular Django setting, not an option of `FSM_TICKET_CONFIG`: it is read once at startup, so it cannot be changed via `django-constance`.
+
+> **Note:** for backward compatibility, if `FSM_TICKET_API_PREFIX` is not defined and `djangorestframework` and `django-filter` are installed, the API is enabled with the `"api"` prefix and a `FutureWarning` is emitted. Starting from `django-fsm-ticket` 2.0, the API will be disabled unless `FSM_TICKET_API_PREFIX` is explicitly set. Always define `FSM_TICKET_API_PREFIX`, so that the API is not enabled inadvertently when these packages are installed (for instance, as dependencies of another package).
 
 
 ### API endpoints

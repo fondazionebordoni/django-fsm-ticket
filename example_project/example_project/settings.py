@@ -160,3 +160,4 @@ CONSTANCE_CONFIG = {
 }
 
 FSM_TICKET_CONFIG = constance.config
+FSM_TICKET_API_PREFIX = None

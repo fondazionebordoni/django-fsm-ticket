@@ -77,7 +77,7 @@ INSTALLED_APPS = [
 ]
 ```
 
-Also, in `settings.py`, add a configuration class:
+Also, in `settings.py`, add a configuration class and disable the API for now:
 
 ```python
 # settings.py
@@ -85,6 +85,8 @@ Also, in `settings.py`, add a configuration class:
 class FSM_TICKET_CONFIG:
     URL_PREFIX = "https://my.fsm.tickets.com"
     NOTIFICATION_LEVEL = 2
+
+FSM_TICKET_API_PREFIX = None
 ```
 
 Here, we are specifying the base url and telling `django-fsm-ticket` to send email notifications to users in charge of taking actions on tickets unless they opted-out from email notifications.
@@ -116,6 +118,7 @@ urlpatterns = [
     # ...
 ]
 ```
+
 
 ## Tutorial
 

@@ -53,6 +53,7 @@ def run():
             }
         },
         ROOT_URLCONF="django_fsm_ticket.urls",
+        FSM_TICKET_API_PREFIX="api",
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",
             "django.contrib.sessions.middleware.SessionMiddleware",
