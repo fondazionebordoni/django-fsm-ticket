@@ -62,6 +62,7 @@ def ticket_detail_serializer_factory(ticket_engine):
         class Meta:
             model = ticket_engine.TicketClass
             exclude = ["polymorphic_ctype"] + ticket_engine.TicketClass.exclude_fields
+            read_only_fields = ["ts", "user", "state", "last_update"]
 
         def get_actions(self, obj):
             actions = ticket_engine.get_ticket_actions(obj, self._get_current_user())

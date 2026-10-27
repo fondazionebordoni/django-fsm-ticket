@@ -345,6 +345,62 @@ class TicketViewTest(TestCase):
         self.assertTrue("amount" in response.data)
         self.assertEqual(2, PurchaseTicket.objects.count())
 
+    @tag("create")
+    def test_create_ticket_internal_fields_read_only(self):
+        """Internal fields cannot be set when creating a ticket via API"""
+        self.ticket.comment(TicketUpdate(notes="Some notes"))
+        self.ticket.refresh_from_db()
+        client = APIClient()
+        client.force_login(user=self.user)
+        response = client.post(
+            reverse(
+                "ticket-list",
+                kwargs={
+                    "root_name": "purchase",
+                },
+            ),
+            data=json.dumps({
+                "title": "New title",
+                "amount": 123,
+                "state": "purchased",
+                "ts": "2000-01-01T00:00:00Z",
+                "last_update": self.ticket.last_update.pk,
+                "user": self.admin.pk,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(201, response.status_code, response.data)
+        ticket = PurchaseTicket.objects.get(pk=response.data["id"])
+        self.assertEqual("new", ticket.state)
+        self.assertNotEqual(2000, ticket.ts.year)
+        self.assertIsNone(ticket.last_update)
+        self.assertEqual(self.user, ticket.user)
+
+    @tag("update")
+    def test_update_ticket_internal_fields_read_only(self):
+        """Internal fields cannot be changed via API, even with can_modify"""
+        client = APIClient()
+        client.force_login(user=self.admin)
+        response = client.patch(
+            reverse(
+                "ticket-detail",
+                kwargs={"root_name": "purchase", "pk": self.ticket.id},
+            ),
+            data=json.dumps({
+                "title": "New title",
+                "state": "purchased",
+                "ts": "2000-01-01T00:00:00Z",
+                "user": self.admin.pk,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code, response.data)
+        self.ticket.refresh_from_db()
+        self.assertEqual("New title", self.ticket.title)
+        self.assertEqual("new", self.ticket.state)
+        self.assertNotEqual(2000, self.ticket.ts.year)
+        self.assertEqual(self.user, self.ticket.user)
+
     @tag("update")
     def test_update_ticket_data(self):
         """Update ticket"""
