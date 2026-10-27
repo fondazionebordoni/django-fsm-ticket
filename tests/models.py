@@ -100,6 +100,14 @@ class PurchaseTicket(Ticket):
             ticket_update.name = ticket_update.file.name
         return ticket_update
 
+    def can_delete_attachment(self, request):
+        return request.user.is_authenticated
+
+    @action(priority=0, verbose_name="Delete file")
+    @transition("state", "purchased", "purchased", permission=only_admin)
+    def delete_attachment(self, ticket_update=None):
+        return ticket_update
+
 
 purchase_ticket_engine = TicketEngine(
     TicketClass=PurchaseTicket,

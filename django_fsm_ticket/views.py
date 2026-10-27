@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_protect
 from django_fsm import can_proceed, has_transition_perm
 
 from django.contrib.auth.views import redirect_to_login
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import Http404, redirect, reverse
 from django.views.decorators.http import require_POST, require_safe
@@ -98,17 +99,26 @@ def download_attachment(request, id, uuid):
 
 @ticketupdate_visible_to_user("id")
 @require_POST
+@transaction.atomic
 def delete_attachment(request, id, uuid):
+    """
+    Mark an attachment as deleted, through the `delete_attachment` transition of its ticket
+
+    Nothing is written unless the transition is allowed in current state and to current user
+    """
     try:
-        atu = AttachmentTicketUpdate.objects.get(id=id, uuid=uuid)
+        atu = AttachmentTicketUpdate.objects.select_for_update().get(id=id, uuid=uuid, deleted=False)
     except AttachmentTicketUpdate.DoesNotExist:
         raise Http404()
     t = atu.ticket
     if not t.can_delete_attachment(request):
         return redirect_to_login(request.path)
+    transition = getattr(t, "delete_attachment", None)
+    if transition is None or not can_proceed(transition):
+        raise Http404()
+    if not has_transition_perm(transition, request.user):
+        return HttpResponseForbidden()
     atu.deleted = True
     atu.save()
-    d = DeleteAttachmentTicketUpdate(ticket=t, attachment=atu, user=request.user)
-    d.save()
-    t.delete_attachment(d)
+    transition(DeleteAttachmentTicketUpdate(attachment=atu, user=request.user))
     return redirect(reverse("single_ticket", args=(t.root_name, t.pk)))

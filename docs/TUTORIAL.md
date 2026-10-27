@@ -624,7 +624,7 @@ def delete_attachment(self, ticket_update=None):
 
 Being a 0-priority action, `django-fsm-ticket` will not display an action button. However, a delete button will be displayed in the "Attachments" table at the top of the ticket page, next to the file to be deleted (not in the card of the ticket update).
 
-The button is only displayed if the method `can_delete_attachment(request)` of your ticket class returns `True`. The default implementation returns `False`, so you **must** override it, otherwise no delete button will ever appear. This method is also checked by the delete view, while the `permission` of the transition only controls who can run the action itself. For example, to allow superusers only:
+The button is only displayed if the method `can_delete_attachment(request)` of your ticket class returns `True`. The default implementation returns `False`, so you **must** override it, otherwise no delete button will ever appear. The delete view checks both this method and the `delete_attachment` transition: the file can only be deleted if the transition is allowed from the current state of the ticket, and its `permission` (if any) is granted to the current user. For example, to allow superusers only:
 
 ```python
 # purchase/models.py
