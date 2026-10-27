@@ -162,6 +162,8 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
     - `form`: if not `None`, replace automatically generated `ModelForm` with a custom
       form class. Custom form shall work like a `ModelForm`, implementing a method
       `save(commit=True)` which returns the newly created `Ticket` instance.
+      The form is only used by HTML views: replicate its validation in `write_serializer`
+      if the API is enabled.
 
     For very advanced customization, if you want to replace the view that creates
     a new ticket, set the `create_view` parameter of `TicketEngine.__init__(...)`
@@ -555,10 +557,14 @@ class TicketUpdate(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
     - `form` if not `None`, replace automatically generated `ModelForm` with a custom
       form class. Custom form shall work like a `ModelForm`, implementing a method
       `save(commit=True)` which returns the newly created `TicketUpdate` instance.
+      The form is only used by HTML views: replicate its validation in `write_serializer`
+      if the API is enabled.
     - the whole creation view. For this aim, use `TicketEngine.set_view(...)` method.
     - `list_serializer`: an optional alternative serializer for list views
     - `detail_serializer`: an optional alternative serializer for detail views
-    - `write_serializer`: an optional alternative serializer for write views
+    - `write_serializer`: an optional alternative serializer for write views. Derive it
+      from `TicketUpdateBaseCreateSerializer`, or include `LimitQuerysetsMixin`, to apply
+      `limit_view_querysets`
     """
     # Basic customization
     template_fields = 'django_fsm_ticket/partials/ticketupdate_fields.html'
@@ -608,7 +614,10 @@ class TicketUpdate(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         For ForeignKey fields, limit queryset to be shown in ActionView
 
         Shall return a dictionary mapping field names to querysets,
-        only for fields for which queryset shall be limited
+        only for fields for which queryset shall be limited.
+
+        Limits are also applied by the action API view, if the serializer is generated
+        or includes `LimitQuerysetsMixin`
         """
         return {}
 
@@ -705,6 +714,13 @@ class DeleteAttachmentTicketUpdate(TicketUpdate):
     template_fields = 'django_fsm_ticket/partials/delete_attachment_tu_fields.html'
 
     attachment = models.ForeignKey(AttachmentTicketUpdate, on_delete=models.CASCADE)
+
+    @classmethod
+    def limit_view_querysets(cls, ticket):
+        # Only attachments of the same ticket can be deleted
+        return {
+            "attachment": AttachmentTicketUpdate.objects.filter(ticket=ticket, deleted=False),
+        }
 
     def __str__(self):
         return self.attachment.get_name()
