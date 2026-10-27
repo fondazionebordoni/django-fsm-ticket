@@ -370,6 +370,10 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         Furthermore, notification is set to additional_users (if set),
         even to ticket_update.user if they belong to `additional_users`.
 
+        In any case, users for whom `ticket_update.is_visible()` is False
+        are not notified. Notice that `is_visible()` receives a request
+        surrogate, which only provides the `user` attribute.
+
         Config-defined notification level can be overridden using the
         `notification_level` parameter.
 
@@ -389,6 +393,8 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
 
         logging.info(f"Reminder about ticket #{ticket_update.ticket.pk} should be sent to: {users}")
         users = filter_notification_users(users, notification_level)
+        # Do not disclose the content of ticket updates hidden to recipients
+        users = [u for u in users if ticket_update.is_visible(FakeRequest(u))]
         logging.info(f"Actually sending reminder to: {users}")
 
         template = notification_template
