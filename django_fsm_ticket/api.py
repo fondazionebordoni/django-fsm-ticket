@@ -171,9 +171,15 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
         applies the action (from url) to the ticket
 
         Checks if the action can be applied in has_transition_permission
+
+        Will return 404 if user does not have
+        view access.
         """
 
-        permission_classes = [IsAuthenticated]
+        permission_classes = [
+            IsAuthenticated,
+            PrefilteredTicketVisibilityPermission,
+        ]
         queryset = ticket_engine.TicketClass.prefilter_visible(request)
 
         def get_serializer_class(self):
