@@ -29,13 +29,6 @@ class PurchaseTicket(Ticket):
 
     # Ticket visibility
 
-    def is_visible(self, request):
-        if request.user.is_anonymous:
-            return False
-        if request.user.is_superuser:
-            return True
-        return self.user == request.user
-
     @classmethod
     def prefilter_visible(cls, request):
         if request.user.is_anonymous:
