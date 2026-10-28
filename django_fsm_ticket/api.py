@@ -5,7 +5,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django_fsm import can_proceed, has_transition_perm
 from rest_framework import generics, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
