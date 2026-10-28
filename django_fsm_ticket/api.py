@@ -16,6 +16,7 @@ from django.db import transaction
 from django.http import Http404
 from django.utils.translation import gettext as _
 
+from django_fsm_ticket.base_views import ActionError
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
 from django_fsm_ticket.models import TicketUpdate, engine_registry
 from django_fsm_ticket.permissions import (
@@ -214,8 +215,11 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
             with transaction.atomic():
                 # Create the ticket update
                 ticket_update = serializer.save()
-                # Call the action function
-                transition(ticket_update)
+                # Call the action function; errors raised by the action are shown, as in HTML views
+                try:
+                    transition(ticket_update)
+                except ActionError as e:
+                    raise ValidationError({"non_field_errors": [str(e)]})
                 ticket.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -288,7 +292,9 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
                 ticket_update_serializer_class = ticket_update_list_serializer_factory(
                     ticket_update.__class__, ticket_engine
                 )
-            serializer = ticket_update_serializer_class(ticket_update)
+            serializer = ticket_update_serializer_class(
+                ticket_update, context=self.get_serializer_context()
+            )
             return serializer.data
 
         def list(self, request, *args, **kwargs):
