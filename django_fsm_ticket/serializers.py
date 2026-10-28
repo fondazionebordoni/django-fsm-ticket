@@ -5,9 +5,10 @@
 from rest_framework import serializers
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.module_loading import import_string
 
-from django_fsm_ticket.models import Ticket
+from django_fsm_ticket.models import AttachmentTicketUpdate, Ticket
 from django_fsm_ticket.utils import user_verbose
 
 
@@ -93,6 +94,18 @@ def ticket_detail_serializer_factory(ticket_engine):
 
 
 class TicketUpdateBaseCreateSerializer(GetUserMixin, serializers.ModelSerializer):
+
+    def validate_file(self, value):
+        """
+        Apply the size limit of attachment ticket updates
+        """
+        model = self.Meta.model
+        if value and issubclass(model, AttachmentTicketUpdate):
+            try:
+                model.validate_file_size(value)
+            except DjangoValidationError as e:
+                raise serializers.ValidationError(e.messages)
+        return value
 
     def create(self, validated_data):
         user = self._get_current_user()

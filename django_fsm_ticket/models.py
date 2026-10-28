@@ -19,6 +19,7 @@ from django.core.mail import send_mail
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured, ValidationError
 from django.db import models, transaction
 from django.shortcuts import reverse
+from django.template.defaultfilters import filesizeformat
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -683,11 +684,34 @@ class AttachmentTicketUpdate(TicketUpdate):
     """
     template_fields = 'django_fsm_ticket/partials/attachment_tu_fields.html'
     exclude_fields = ['uuid', 'name', 'deleted']
+    # Maximum size of attached files, in bytes (None: no limit).
+    # To set different limits for different actions, use a subclass (even a proxy) for each action
+    max_file_size = None
 
     # uuid = models.UUIDField(default=uuid.uuid4, null=False, unique=True, editable=False, db_index=True)
     name = models.CharField(null=True, max_length=255)
     file = models.FileField(null=True, blank=True, verbose_name=_("Attachment"))
     deleted = models.BooleanField(default=False)
+
+    @classmethod
+    def validate_file_size(cls, file):
+        """
+        Raise ValidationError if `file` is larger than `max_file_size`
+        """
+        if cls.max_file_size is not None and file.size > cls.max_file_size:
+            raise ValidationError(
+                _("File too large: maximum size is %(size)s"),
+                code="file_too_large",
+                params={"size": filesizeformat(cls.max_file_size)},
+            )
+
+    def clean(self):
+        super().clean()
+        if self.file and not self.file._committed:
+            try:
+                self.validate_file_size(self.file)
+            except ValidationError as e:
+                raise ValidationError({"file": e})
 
     def get_name(self):
         if self.file:

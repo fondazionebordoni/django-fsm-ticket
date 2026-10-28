@@ -609,6 +609,20 @@ It is useful to keep track of the original filename because Django will alter th
 
 The template for our `AttachmentTicketUpdate` is already defined in `django-fsm-ticket`, as well as the view that handles file download only for authorized users, so no other configuration is needed. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
 
+By default, the size of attached files is not limited. You can set a limit, in bytes, through the `max_file_size` attribute. To set different limits for different actions, derive a model for each action; a proxy model is enough, if you do not need further fields:
+
+```python
+# purchase/models.py
+
+class InvoiceTicketUpdate(AttachmentTicketUpdate):
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+
+    class Meta:
+        proxy = True
+```
+
+and use it as the `ticket_update_model` of the `purchased` action. The limit is checked both by HTML views and by the REST API (unless you provide a custom `write_serializer` that does not derive from `TicketUpdateBaseCreateSerializer`). Since it is checked after the file has been received, you should also limit the size of requests in your web server (e.g. `client_max_body_size` in nginx) to enforce a global cap.
+
 If you want to allow your users to delete a previously uploaded attachment, simply define this action:
 
 ```python
