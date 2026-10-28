@@ -706,6 +706,8 @@ Users not belonging to one of these groups will receive notifications depending 
 - __2__ (default): Notifications are turned on, but users in `notifications_never` group will not receive notifications
 - __3__: Notifications are turned on for all users
 
+Inactive users (`is_active` set to `False`) never receive notifications.
+
 
 ## REST API
 
