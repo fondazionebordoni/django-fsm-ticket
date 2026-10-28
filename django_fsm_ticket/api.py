@@ -17,7 +17,7 @@ from django.http import Http404
 from django.utils.translation import gettext as _
 
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
-from django_fsm_ticket.models import TicketUpdate, engine_registry
+from django_fsm_ticket.models import TicketUpdate, engine_registry, fsm_tickets_config
 from django_fsm_ticket.permissions import (
     ticket_list_permission_factory,
     TicketDetailPermission,
@@ -31,6 +31,25 @@ from django_fsm_ticket.serializers import (
     ticket_update_list_serializer_factory,
 )
 from django_fsm_ticket.utils import import_path_or_string
+
+
+class TicketPagination(LimitOffsetPagination):
+    """
+    Limit-offset pagination, with page size bounded by `FSM_TICKET_CONFIG.API_MAX_LIMIT`
+
+    If `API_MAX_LIMIT` is set, lists are always paginated, even if no `limit` is requested,
+    and requested limits are capped. Otherwise, lists are paginated only if `limit`
+    is requested (or a DRF `PAGE_SIZE` is set), without any cap.
+    """
+
+    def get_limit(self, request):
+        limit = super().get_limit(request)
+        max_limit = getattr(fsm_tickets_config, "API_MAX_LIMIT", None)
+        if not max_limit:
+            return limit
+        if limit is None:
+            return max_limit
+        return min(limit, max_limit)
 
 
 def ticket_list_factory(request, root_name, *args, **kwargs):
@@ -55,7 +74,7 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
         ]
         queryset = ticket_engine.TicketClass.prefilter_visible(request)
 
-        pagination_class = LimitOffsetPagination
+        pagination_class = TicketPagination
         filter_backends = [
             SearchFilter,
             OrderingFilter,
@@ -248,7 +267,7 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
         serializer_class = ticket_update_list_serializer_factory(
             TicketUpdate, ticket_engine
         )
-        pagination_class = LimitOffsetPagination
+        pagination_class = TicketPagination
         filter_backends = [
             SearchFilter,
             OrderingFilter,

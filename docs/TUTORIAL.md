@@ -792,7 +792,7 @@ It is also possible to provide a custom view class (it has to provide `as_view()
 
 The default view provides
 
-- pagination using `limit` and `offset`
+- pagination using `limit` and `offset` (see below)
 - ordering on all fields, the default ordering is descending on the `id` field
 - filtering on all fields except `exclude_fields` declared on the `Ticket` class, plus filtering out closed tickets through the `hide_closed` boolean filter
 - searching on the `search_fields` declared on the `Ticket` class
@@ -800,6 +800,18 @@ The default view provides
 A ticket can be created by doing a `POST` on the endpoint providing the data for the new ticket. The serializer for ticket creation can be overridden by specifying the `write_serializer` on the `Ticket` class. This will typically be necessary when the ticket has relations to other models that are not handled automatically by the DRF `ModelSerializer`.
 
 Note that creation is restricted by calling `can_create(user)` on the `Ticket` model.
+
+By default, lists are paginated only if the `limit` parameter is provided (or if the DRF `PAGE_SIZE` setting is set), and the page size is not limited: a single request may thus load all the tickets. We recommend bounding the page size with the `API_MAX_LIMIT` option of your configuration:
+
+```python
+# settings.py
+
+class FSM_TICKET_CONFIG:
+    # ...
+    API_MAX_LIMIT = 100
+```
+
+When `API_MAX_LIMIT` is set, lists of tickets and ticket updates are always paginated, even if no `limit` is requested, and larger limits are reduced to `API_MAX_LIMIT`. Note that this changes the format of the response for clients that do not provide `limit`: they will receive a paginated response (`count`, `next`, `previous`, `results`) instead of a plain list. You may also want to limit the rate of API requests through [DRF throttling](https://www.django-rest-framework.org/api-guide/throttling/).
 
 
 #### Ticket detail and update
