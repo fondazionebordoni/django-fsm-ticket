@@ -33,6 +33,15 @@ from django_fsm_ticket.serializers import (
 from django_fsm_ticket.utils import import_path_or_string
 
 
+def orderable_fields(model, exclude_fields):
+    """
+    Return the names of the fields of `model` which can be used for ordering
+
+    Excluded fields cannot, since ordering would disclose their values
+    """
+    return [f.name for f in model._meta.fields if f.name not in exclude_fields]
+
+
 def ticket_list_factory(request, root_name, *args, **kwargs):
     try:
         ticket_engine = engine_registry[root_name]
@@ -66,7 +75,10 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
             if ticket_engine.TicketClass.filterset_class
             else ticket_filter_factory(ticket_engine.TicketClass)
         )
-        ordering_fields = "__all__"
+        ordering_fields = orderable_fields(
+            ticket_engine.TicketClass,
+            ["polymorphic_ctype"] + ticket_engine.TicketClass.exclude_fields,
+        )
         search_fields = ticket_engine.TicketClass.search_fields
         ordering = ["-id"]
 
@@ -254,7 +266,9 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
             OrderingFilter,
             DjangoFilterBackend,
         ]
-        ordering_fields = "__all__"
+        ordering_fields = orderable_fields(
+            TicketUpdate, ["polymorphic_ctype"] + TicketUpdate.exclude_fields
+        )
         search_fields = ["notes"]
         filterset_class = TicketUpdateFilter
         ordering = ["-id"]
