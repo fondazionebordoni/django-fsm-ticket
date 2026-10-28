@@ -149,8 +149,9 @@ def ticket_detail_factory(request, root_name, *args, **kwargs):
 
             permission_classes = [
                 IsAuthenticated,
-                TicketDetailPermission,
+                # Visibility first: non-visible tickets are not found (404), rather than forbidden (403)
                 PrefilteredTicketVisibilityPermission,
+                TicketDetailPermission,
             ]
             queryset = ticket_engine.TicketClass.prefilter_visible(request)
 
@@ -343,8 +344,9 @@ def ticket_update_detail_factory(request, root_name, *args, **kwargs):
 
         permission_classes = [
             IsAuthenticated,
-            TicketDetailPermission,
+            # Visibility first: non-visible ticket updates are not found (404), rather than forbidden (403)
             TicketUpdateVisibilityPermission,
+            TicketDetailPermission,
         ]
         queryset = TicketUpdate.objects.filter(ticket__polymorphic_ctype=ctype)
         serializer_class = ticket_update_list_serializer_factory(

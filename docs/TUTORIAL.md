@@ -777,7 +777,7 @@ It is also possible to provide a custom view class (it has to provide `as_view()
 The default view provides
 
 - pagination using `limit` and `offset`
-- ordering on all fields, the default ordering is descending on the `id` field
+- ordering on all fields except `exclude_fields` declared on the `Ticket` class, the default ordering is descending on the `id` field
 - filtering on all fields except `exclude_fields` declared on the `Ticket` class, plus filtering out closed tickets through the `hide_closed` boolean filter
 - searching on the `search_fields` declared on the `Ticket` class
 
