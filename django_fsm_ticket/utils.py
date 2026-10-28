@@ -205,6 +205,22 @@ def serve_file(file_path, served_name=None):
     )
 
 
+def serve_modelfile(modelfile, served_name=None):
+    """
+    Serve the content of a model file, streaming it directly from storage
+
+    `served_name` is the name of the file which will be served. If not specified,
+    it will be the basename of the model file name
+    """
+    served_name = os.path.basename(served_name or modelfile.name)
+    return FileResponse(
+        modelfile.open("rb"),
+        content_type=guess_mimetype_with_default(modelfile.name),
+        as_attachment=True,
+        filename=served_name,
+    )
+
+
 def user_verbose(user):
     """
     Returns a string for the given Django user: first and last name, if defined, otherwise username
