@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+from unittest.mock import patch
 from rest_framework.test import APIClient
 
 from django.contrib.auth.models import User
@@ -519,6 +520,36 @@ class TicketViewTest(TestCase):
             content_type="application/json",
         )
         self.assertEqual(403, response.status_code)
+
+    @tag("action")
+    def test_update_ticket_action_not_visible(self):
+        """
+        Block actions on tickets that pass prefilter_visible but not is_visible
+        """
+        other_user = User.objects.create_user(
+            username="otheruser", email="other@fub.it", password="top_secret"
+        )
+        client = APIClient()
+        client.force_login(user=other_user)
+        with patch.object(
+            PurchaseTicket,
+            "prefilter_visible",
+            classmethod(lambda cls, request: cls.objects.all()),
+        ):
+            response = client.patch(
+                reverse(
+                    "ticket-detail-action",
+                    kwargs={
+                        "root_name": "purchase",
+                        "pk": self.ticket.id,
+                        "action_name": "comment",
+                    },
+                ),
+                data=json.dumps({"notes": "A note"}),
+                content_type="application/json",
+            )
+        self.assertEqual(404, response.status_code)
+        self.assertEqual(0, TicketUpdate.objects.filter(ticket=self.ticket).count())
 
     @tag("action", "lifecycle")
     def test_update_ticket(self):
