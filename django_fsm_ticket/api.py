@@ -3,9 +3,9 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from django_filters.rest_framework import DjangoFilterBackend
-from django_fsm import can_proceed, has_transition_perm
+from django_fsm import TransitionNotAllowed, can_proceed, has_transition_perm
 from rest_framework import generics, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -31,6 +31,12 @@ from django_fsm_ticket.serializers import (
     ticket_update_list_serializer_factory,
 )
 from django_fsm_ticket.utils import import_path_or_string
+
+
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = _("This action is no longer available: the ticket has been modified in the meantime")
+    default_code = "conflict"
 
 
 # Default implementations, which do not hide anything
@@ -242,7 +248,11 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
                 # Create the ticket update
                 ticket_update = serializer.save()
                 # Call the action function
-                transition(ticket_update)
+                try:
+                    transition(ticket_update)
+                except TransitionNotAllowed:
+                    # A concurrent action changed the state of the ticket
+                    raise Conflict()
                 ticket.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 

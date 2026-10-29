@@ -321,6 +321,20 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
     def __str__(self):
         return f"Ticket #{self.pk}: {self.title}"
 
+    def _lock_for_transition(self):
+        """
+        Lock this ticket until the end of current transaction, and reload the fields transitions depend on
+
+        Concurrent actions on the same ticket are thus serialized, and each one is checked against
+        the current state. Other fields are not reloaded, to keep unsaved changes made by the caller.
+        """
+        if self.pk is None:
+            return
+        # Querysets are lazy: evaluate it to acquire the lock. Lock the row of the base table,
+        # which exists for any ticket class (and contains the fields reloaded below)
+        Ticket.objects.select_for_update().filter(pk=self.pk).values_list("pk").get()
+        self.refresh_from_db(fields=["state", "last_update"])
+
     # API Methods
     def check_visibility(self, request):
         """
@@ -519,15 +533,18 @@ def action(
         @after_transition
         @wraps(f)
         def g(self, ticket_update=None, *gargs, **gkwargs):
-            source_state = self.state
-            if ticket_update is None:
-                ticket_update = ticket_update_model() if ticket_update_model is not None else TicketUpdate()
-            ret = f(self, ticket_update, *gargs, **gkwargs)
-            if ret is not None:
-                ticket_update = ret
-            ticket_update.source_state = source_state
-            self._add_update(ticket_update)
-            return ret
+            with transaction.atomic():
+                # Raise TransitionNotAllowed if a concurrent action changed the state
+                self._lock_for_transition()
+                source_state = self.state
+                if ticket_update is None:
+                    ticket_update = ticket_update_model() if ticket_update_model is not None else TicketUpdate()
+                ret = f(self, ticket_update, *gargs, **gkwargs)
+                if ret is not None:
+                    ticket_update = ret
+                ticket_update.source_state = source_state
+                self._add_update(ticket_update)
+                return ret
 
         g.action = Action(
             verbose_name=verbose_name,

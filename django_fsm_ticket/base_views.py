@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from django_fsm import TransitionNotAllowed
+
 from django.http import Http404
 from django.shortcuts import reverse
 from django.utils.translation import gettext_lazy as _
@@ -135,6 +137,11 @@ def ticket_action_view_factory(TicketUpdateModel):
                 return super().form_valid(form)
             except ActionError as ae:
                 form.add_error(None, str(ae))
+                transaction.set_rollback(True)
+                return super().form_invalid(form)
+            except TransitionNotAllowed:
+                # A concurrent action changed the state of the ticket
+                form.add_error(None, _("This action is no longer available: the ticket has been modified in the meantime"))
                 transaction.set_rollback(True)
                 return super().form_invalid(form)
             except Exception as e:
