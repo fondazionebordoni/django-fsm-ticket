@@ -17,9 +17,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import redirect_to_login
 from django.core.mail import send_mail
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured, ValidationError
 from django.db import models, transaction
 from django.shortcuts import reverse
+from django.template.defaultfilters import filesizeformat
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -39,6 +40,17 @@ try:
     fsm_tickets_config = settings.FSM_TICKET_CONFIG
 except AttributeError:
     fsm_tickets_config = object()
+
+
+def active_users():
+    """
+    Return the queryset of active users (all users, if the user model has no `is_active` field)
+    """
+    try:
+        User._meta.get_field("is_active")
+    except FieldDoesNotExist:
+        return User.objects.all()
+    return User.objects.filter(is_active=True)
 
 
 def user_to_mail_recipient(user):
@@ -357,12 +369,12 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
 
     def get_users_with_actions(self, min_priority=0.5):
         """
-        Return all the users which may take an action on curren ticket
+        Return all the active users which may take an action on current ticket
 
-        Only consider action with prioririty at least `min_priority`
+        Only consider action with priority at least `min_priority`
         """
         ticket_engine = engine_registry[self.root_name]
-        us = User.objects.all()
+        us = active_users()
         out = []
         for u in us:
             if self.check_visibility(FakeRequest(u)):
@@ -393,6 +405,8 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         Furthermore, notification is set to additional_users (if set),
         even to ticket_update.user if they belong to `additional_users`.
 
+        Inactive users are never notified.
+
         In any case, users for whom `ticket_update.is_visible()` is False
         are not notified. (Notice that `is_visible()` receives a request
         surrogate, which only provides the `user` attribute.)
@@ -418,6 +432,9 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         if additional_users is not None:
             users.extend(additional_users)
             users = set(users)
+
+        # Inactive users are never notified
+        users = [u for u in users if getattr(u, "is_active", True)]
 
         logging.info(f"Reminder about ticket #{ticket_update.ticket.pk} should be sent to: {users}")
         users = filter_notification_users(users, notification_level)
@@ -721,11 +738,34 @@ class AttachmentTicketUpdate(TicketUpdate):
     """
     template_fields = 'django_fsm_ticket/partials/attachment_tu_fields.html'
     exclude_fields = ['uuid', 'name', 'deleted']
+    # Maximum size of attached files, in bytes (None: no limit).
+    # To set different limits for different actions, use a subclass (even a proxy) for each action
+    max_file_size = None
 
     # uuid = models.UUIDField(default=uuid.uuid4, null=False, unique=True, editable=False, db_index=True)
     name = models.CharField(null=True, max_length=255)
     file = models.FileField(null=True, blank=True, verbose_name=_("Attachment"))
     deleted = models.BooleanField(default=False)
+
+    @classmethod
+    def validate_file_size(cls, file):
+        """
+        Raise ValidationError if `file` is larger than `max_file_size`
+        """
+        if cls.max_file_size is not None and file.size > cls.max_file_size:
+            raise ValidationError(
+                _("File too large: maximum size is %(size)s"),
+                code="file_too_large",
+                params={"size": filesizeformat(cls.max_file_size)},
+            )
+
+    def clean(self):
+        super().clean()
+        if self.file and not self.file._committed:
+            try:
+                self.validate_file_size(self.file)
+            except ValidationError as e:
+                raise ValidationError({"file": e})
 
     def get_name(self):
         if self.file:

@@ -606,6 +606,20 @@ It is useful to keep track of the original filename because Django will alter th
 
 The template for our `AttachmentTicketUpdate` is already defined in `django-fsm-ticket`, as well as the view that handles file download only for authorized users, so no other configuration is needed. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
 
+By default, the size of attached files is not limited. You can set a limit, in bytes, through the `max_file_size` attribute. To set different limits for different actions, derive a model for each action; a proxy model is enough, if you do not need further fields:
+
+```python
+# purchase/models.py
+
+class InvoiceTicketUpdate(AttachmentTicketUpdate):
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+
+    class Meta:
+        proxy = True
+```
+
+and use it as the `ticket_update_model` of the `purchased` action. The limit is checked both by HTML views and by the REST API (unless you provide a custom `write_serializer` that does not derive from `TicketUpdateBaseCreateSerializer`). Since it is checked after the file has been received, you should also limit the size of requests in your web server (e.g. `client_max_body_size` in nginx) to enforce a global cap.
+
 If you want to allow your users to delete a previously uploaded attachment, simply define this action:
 
 ```python
@@ -703,6 +717,8 @@ Users not belonging to one of these groups will receive notifications depending 
 - __2__ (default): Notifications are turned on, but users in `notifications_never` group will not receive notifications
 - __3__: Notifications are turned on for all users
 
+Inactive users (`is_active` set to `False`) never receive notifications.
+
 
 ## REST API
 
@@ -783,7 +799,7 @@ It is also possible to provide a custom view class (it has to provide `as_view()
 
 The default view provides
 
-- pagination using `limit` and `offset`
+- pagination using `limit` and `offset` (see below)
 - ordering on all fields, the default ordering is descending on the `id` field
 - filtering on all fields except `exclude_fields` declared on the `Ticket` class, plus filtering out closed tickets through the `hide_closed` boolean filter
 - searching on the `search_fields` declared on the `Ticket` class
@@ -791,6 +807,18 @@ The default view provides
 A ticket can be created by doing a `POST` on the endpoint providing the data for the new ticket. The serializer for ticket creation can be overridden by specifying the `write_serializer` on the `Ticket` class. This will typically be necessary when the ticket has relations to other models that are not handled automatically by the DRF `ModelSerializer`.
 
 Note that creation is restricted by calling `can_create(user)` on the `Ticket` model.
+
+By default, lists are paginated only if the `limit` parameter is provided (or if the DRF `PAGE_SIZE` setting is set), and the page size is not limited: a single request may thus load all the tickets. We recommend bounding the page size with the `API_MAX_LIMIT` option of your configuration:
+
+```python
+# settings.py
+
+class FSM_TICKET_CONFIG:
+    # ...
+    API_MAX_LIMIT = 100
+```
+
+When `API_MAX_LIMIT` is set, lists of tickets and ticket updates are always paginated, even if no `limit` is requested, and larger limits are reduced to `API_MAX_LIMIT`. Note that this changes the format of the response for clients that do not provide `limit`: they will receive a paginated response (`count`, `next`, `previous`, `results`) instead of a plain list. You may also want to limit the rate of API requests through [DRF throttling](https://www.django-rest-framework.org/api-guide/throttling/).
 
 
 #### Ticket detail and update

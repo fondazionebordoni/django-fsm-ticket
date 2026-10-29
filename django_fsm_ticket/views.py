@@ -18,7 +18,7 @@ from .models import (
     DeleteAttachmentTicketUpdate,
 )
 
-from .utils import serve_file, temporary_filemodel
+from .utils import serve_modelfile
 from .decorators import ticketupdate_visible_to_user
 from .base_views import TicketListView  # noqa exposed to external clients
 
@@ -93,8 +93,9 @@ def download_attachment(request, id, uuid):
         raise Http404()
     if atu.deleted and not request.user.is_superuser:
         raise Http404()
-    with temporary_filemodel(atu.file) as filepath:
-        return serve_file(filepath, atu.name)
+    if not atu.file:
+        raise Http404()
+    return serve_modelfile(atu.file, atu.name)
 
 
 @ticketupdate_visible_to_user("id")
