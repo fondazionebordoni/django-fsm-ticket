@@ -30,18 +30,21 @@ class NotificationVisibilityTest(TestCase):
         )
 
     def test_visible_update_is_notified(self):
-        self.ticket.approve(TicketUpdate(notes="Approved", user=self.admin))
+        with self.captureOnCommitCallbacks(execute=True):
+            self.ticket.approve(TicketUpdate(notes="Approved", user=self.admin))
         self.assertEqual(1, len(mail.outbox))
         self.assertIn("test@fub.it", mail.outbox[0].to[0])
         self.assertIn("Approved", mail.outbox[0].body)
 
     def test_hidden_update_is_not_notified(self):
-        with patch.object(TicketUpdate, "is_visible", visible_to_superusers):
+        with patch.object(TicketUpdate, "is_visible", visible_to_superusers), \
+                self.captureOnCommitCallbacks(execute=True):
             self.ticket.approve(TicketUpdate(notes="Internal note", user=self.admin))
         self.assertEqual([], mail.outbox)
 
     def test_hidden_update_is_not_notified_to_additional_users(self):
-        with patch.object(TicketUpdate, "is_visible", visible_to_superusers):
+        with patch.object(TicketUpdate, "is_visible", visible_to_superusers), \
+                self.captureOnCommitCallbacks(execute=True):
             tu = TicketUpdate(notes="Internal note", user=self.admin)
             self.ticket.comment(tu)
             self.ticket.notify(tu, users=[], additional_users=[self.user])
@@ -49,9 +52,11 @@ class NotificationVisibilityTest(TestCase):
 
     def test_hidden_update_is_not_sent_as_reminder(self):
         with patch.object(TicketUpdate, "is_visible", visible_to_superusers):
-            self.ticket.state = "approved"
-            self.ticket.save()
-            self.ticket.comment(TicketUpdate(notes="Internal note", user=self.admin))
+            with self.captureOnCommitCallbacks(execute=True):
+                self.ticket.state = "approved"
+                self.ticket.save()
+                self.ticket.comment(TicketUpdate(notes="Internal note", user=self.admin))
             mail.outbox.clear()
-            PurchaseTicket.send_reminders()
+            with self.captureOnCommitCallbacks(execute=True):
+                PurchaseTicket.send_reminders()
         self.assertEqual([], mail.outbox)
