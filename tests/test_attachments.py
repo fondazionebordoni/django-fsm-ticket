@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -65,3 +67,15 @@ class DeleteAttachmentTest(TestCase):
         self.assertEqual(302, self.delete(self.admin).status_code)
         self.assertEqual(404, self.delete(self.admin).status_code)
         self.assertEqual(1, DeleteAttachmentTicketUpdate.objects.count())
+
+    def test_delete_attachment_after_concurrent_action(self):
+        """
+        State changed by a concurrent action after the initial checks: nothing is deleted
+        """
+        self.ticket.state = "approved"
+        self.ticket.save()
+        with patch("django_fsm_ticket.views.can_proceed", return_value=True), \
+                patch("django_fsm_ticket.views.has_transition_perm", return_value=True):
+            response = self.delete(self.admin)
+        self.assertEqual(404, response.status_code)
+        self.assertNotDeleted()

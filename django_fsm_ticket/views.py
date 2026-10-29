@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from django.views.decorators.csrf import csrf_protect
-from django_fsm import can_proceed, has_transition_perm
+from django_fsm import TransitionNotAllowed, can_proceed, has_transition_perm
 
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
@@ -120,5 +120,9 @@ def delete_attachment(request, id, uuid):
         return HttpResponseForbidden()
     atu.deleted = True
     atu.save()
-    transition(DeleteAttachmentTicketUpdate(attachment=atu, user=request.user))
+    try:
+        transition(DeleteAttachmentTicketUpdate(attachment=atu, user=request.user))
+    except TransitionNotAllowed:
+        # A concurrent action changed the state of the ticket: the deletion is rolled back
+        raise Http404()
     return redirect(reverse("single_ticket", args=(t.root_name, t.pk)))
