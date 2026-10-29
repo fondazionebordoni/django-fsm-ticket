@@ -17,7 +17,7 @@ from django.http import Http404
 from django.utils.translation import gettext as _
 
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
-from django_fsm_ticket.models import TicketUpdate, engine_registry
+from django_fsm_ticket.models import Ticket, TicketUpdate, engine_registry
 from django_fsm_ticket.permissions import (
     ticket_list_permission_factory,
     TicketDetailPermission,
@@ -31,6 +31,37 @@ from django_fsm_ticket.serializers import (
     ticket_update_list_serializer_factory,
 )
 from django_fsm_ticket.utils import import_path_or_string
+
+
+# Default implementations, which do not hide anything
+DEFAULT_IS_VISIBLE = (Ticket.is_visible, TicketUpdate.is_visible)
+
+
+def overrides_is_visible(cls):
+    """
+    Tell if `cls` or one of its subclasses overrides the default `is_visible` method
+    """
+    if cls.is_visible not in DEFAULT_IS_VISIBLE:
+        return True
+    return any(overrides_is_visible(sub) for sub in cls.__subclasses__())
+
+
+def paginate_visible(view, queryset, is_visible):
+    """
+    Return the items of `queryset` for which `is_visible(item)` is True, paginated
+
+    Visibility is checked on the whole queryset before paginating, so that
+    counts and pages do not disclose anything about non-visible items.
+    Only primary keys of visible items are kept in memory.
+
+    Return a pair (items, paginated)
+    """
+    pks = [item.pk for item in queryset.iterator() if is_visible(item)]
+    page = view.paginate_queryset(pks)
+    if page is not None:
+        pks = page
+    items = {item.pk: item for item in queryset.filter(pk__in=pks)}
+    return [items[pk] for pk in pks], page is not None
 
 
 def ticket_list_factory(request, root_name, *args, **kwargs):
@@ -84,16 +115,18 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
         def list(self, request, *args, **kwargs):
             queryset = self.filter_queryset(self.get_queryset())
 
-            page = self.paginate_queryset(queryset)
-            iterable = page if page is not None else queryset
-
-            visible_tickets = [
-                ticket for ticket in iterable
-                if ticket.is_visible(request)
-            ]
+            if overrides_is_visible(ticket_engine.TicketClass):
+                # prefilter_visible may not be exact
+                visible_tickets, paginated = paginate_visible(
+                    self, queryset, lambda ticket: ticket.is_visible(request)
+                )
+            else:
+                page = self.paginate_queryset(queryset)
+                paginated = page is not None
+                visible_tickets = page if paginated else list(queryset)
 
             serializer = self.get_serializer(visible_tickets, many=True)
-            if page is not None:
+            if paginated:
                 return self.get_paginated_response(serializer.data)
 
             return Response(serializer.data)
@@ -237,15 +270,15 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
         - ticket must be visible
         - ticket update must be visible
 
-        Notice that, while tickets are prefiltered for visibility when loading the queryset,
-        for the currently loaded page of ticket updates we need to check, for each ticket update:
+        Notice that tickets are prefiltered for visibility when loading the queryset.
+        If `is_visible()` is overridden, either by the ticket class or by any ticket update class,
+        we need to check, for each ticket update in the queryset:
         - if the relative ticket is_visible()
         - if the ticket update itself is_visible()
 
-        Thus the endpoint may return a smaller number of ticket updates per page (even no ticket updates at all).
-
-        An alternative approach would be filtering (in Python) _all_ the ticket updates in the queryset before applying pagination,
-        but it would considerably increase the incurred cost.
+        This check is done on the whole queryset before paginating, so that counts and pages
+        do not disclose anything about non-visible ticket updates; this has a cost which is
+        linear in the number of ticket updates in the queryset (each ticket is loaded only once).
         """
         permission_classes = [
             ticket_list_permission_factory(ticket_engine.TicketClass),
@@ -287,16 +320,33 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
             """Override to have separate serializer for each update"""
             queryset = self.filter_queryset(self.get_queryset())
 
-            page = self.paginate_queryset(queryset)
-            iterable = page if page is not None else queryset
+            check_tickets = overrides_is_visible(ticket_engine.TicketClass)
+            if check_tickets or overrides_is_visible(TicketUpdate):
+                # Load each ticket and check its visibility only once
+                tickets = {}
 
-            data = [
-                self.serialize_ticket_update(tu)
-                for tu in iterable
-                if tu.ticket.is_visible(request) and tu.is_visible(request)
-            ]
+                def is_visible(tu):
+                    if tu.ticket_id not in tickets:
+                        ticket = tu.ticket
+                        tickets[tu.ticket_id] = (
+                            ticket,
+                            not check_tickets or ticket.is_visible(request),
+                        )
+                    ticket, ticket_visible = tickets[tu.ticket_id]
+                    if not ticket_visible:
+                        return False
+                    tu.ticket = ticket
+                    return tu.is_visible(request)
 
-            if page is not None:
+                ticket_updates, paginated = paginate_visible(self, queryset, is_visible)
+            else:
+                page = self.paginate_queryset(queryset)
+                paginated = page is not None
+                ticket_updates = page if paginated else list(queryset)
+
+            data = [self.serialize_ticket_update(tu) for tu in ticket_updates]
+
+            if paginated:
                 return self.get_paginated_response(data)
 
             return Response(data)

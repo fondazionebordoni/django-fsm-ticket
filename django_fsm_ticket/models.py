@@ -258,7 +258,9 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         Returns True if this ticket is visible by current user
 
         Hint: use prefilter_visible to discard as many non-visible tickets
-        as possible, using a single database query
+        as possible, using a single database query. Override this method only
+        for rules that cannot be expressed by prefilter_visible: if overridden,
+        API list views check every prefiltered ticket before paginating
         """
         return True
 

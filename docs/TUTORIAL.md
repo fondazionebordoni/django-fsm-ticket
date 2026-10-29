@@ -436,25 +436,7 @@ In `django-fsm-ticket`, we can control:
 - The visibility of each ticket update.
 - The users allowed to perform each action.
 
-Let's start with ticket visibility. In our `PurchaseTicket` class, we'll override the `is_visible` method, which takes a `request` instance as a parameter, to return `True` if and only if the instance should be visible to the user making the current request:
-
-```python
-# purchase/models.py
-
-from django_fsm_ticket.models import Ticket, TicketEngine, action, transition
-
-class PurchaseTicket(Ticket):
-    # ...
-
-    def is_visible(self, request):
-        if request.user.is_anonymous:
-            return False
-        if request.user.is_superuser:
-            return True
-        return self.user == request.user
-```
-
-When a user loads the ticket list page, `django-fsm-ticket` loops through all the tickets, determining the visibility of each ticket to the current user. To optimize this, we can prefilter the queryset of tickets to exclude tickets that should not be visible to the current user. We can override the `prefilter_visible` class method:
+Let's start with ticket visibility. In our `PurchaseTicket` class, we'll override the `prefilter_visible` class method, which takes a `request` instance as a parameter, to return the queryset of tickets visible to the user making the current request:
 
 ```python
 # purchase/models.py
@@ -473,7 +455,22 @@ class PurchaseTicket(Ticket):
         return cls.objects.filter(user=request.user)
 ```
 
-Tickets in the queryset returned by `prefilter_visible` will be double-checked for visibility by calling the `is_visible` method.
+Visibility is enforced on every page and API endpoint: a ticket not included in this queryset cannot be listed, viewed, or acted upon. Since filtering is done by the database, this is efficient even with many tickets.
+
+If some visibility rules cannot be expressed as a queryset, you can additionally override the `is_visible` method, which returns `True` if and only if the ticket instance should be visible to the user making the current request. Tickets returned by `prefilter_visible` will then be double-checked by calling `is_visible`. For example, assuming a hypothetical `is_on_duty` function that checks some external service:
+
+```python
+# purchase/models.py
+
+class PurchaseTicket(Ticket):
+    # ...
+
+    def is_visible(self, request):
+        # Superusers can see all the tickets only while on duty
+        return self.user == request.user or is_on_duty(request.user)
+```
+
+Keep `prefilter_visible` as strict as possible anyway: when `is_visible` is overridden, list views and API endpoints must check each ticket returned by `prefilter_visible`, before paginating, to get correct pages and counts. Their cost grows with the number of prefiltered tickets. So, do not override `is_visible` if `prefilter_visible` is already exact.
 
 To limit the users who can take an action, you can use the `permission` optional attribute of the `django-fsm-2` `@transition` decorator. `permission` is a callable that takes the ticket instance and the user as parameters and returns `True` if and only if the transition is possible for the given ticket and user. If the transition is forbidden, the action button will not be displayed. Let's add permission to the `approve` action:
 
