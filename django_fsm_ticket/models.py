@@ -57,7 +57,7 @@ def user_to_mail_recipient(user):
     """
     Returns an email recipient string from a user instance
     """
-    return formataddr((str(user), user.email))
+    return str(formataddr((str(user), str(user.email))))
 
 
 class Action:

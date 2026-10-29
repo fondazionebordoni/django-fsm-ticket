@@ -1,3 +1,4 @@
+import json
 from email.utils import getaddresses
 from unittest.mock import patch
 
@@ -5,8 +6,9 @@ from django.contrib.auth.models import User
 from django.core import mail
 from django.db import transaction
 from django.test import TestCase
+from django.utils.functional import SimpleLazyObject
 
-from django_fsm_ticket.models import TicketUpdate
+from django_fsm_ticket.models import TicketUpdate, user_to_mail_recipient
 from tests.models import PurchaseTicket
 
 
@@ -81,3 +83,18 @@ class NotificationDeliveryTest(TestCase):
                 self.captureOnCommitCallbacks(execute=True):
             self.approve()
         self.assertEqual([], mail.outbox)
+
+
+class MailRecipientTest(TestCase):
+    def test_lazy_email_gives_plain_str(self):
+        """
+        The recipient must be a plain str, e.g. to be serialized by Celery
+
+        With an empty name, formataddr() would return the (lazy) email as is
+        """
+        user = User(username="testuser")
+        user.email = SimpleLazyObject(lambda: "test@fub.it")
+        with patch.object(User, "__str__", lambda u: ""):
+            recipient = user_to_mail_recipient(user)
+        self.assertIs(str, type(recipient))
+        self.assertEqual('"test@fub.it"', json.dumps(recipient))
