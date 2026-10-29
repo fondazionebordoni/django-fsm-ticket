@@ -125,5 +125,6 @@ class ResourceLimitsTest(TestCase):
         tu = TicketUpdate(user=self.admin)
         self.ticket.comment(tu)
         mail.outbox.clear()
-        self.ticket.notify(tu, users=[inactive], additional_users=[inactive, self.user])
+        with self.captureOnCommitCallbacks(execute=True):
+            self.ticket.notify(tu, users=[inactive], additional_users=[inactive, self.user])
         self.assertEqual(["test@fub.it"], [m.to[0].split("<")[-1].rstrip(">") for m in mail.outbox])

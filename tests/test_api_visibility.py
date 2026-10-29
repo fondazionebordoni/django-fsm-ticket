@@ -111,3 +111,19 @@ class ListVisibilityTest(TestCase):
 
         with patch.object(TicketUpdate, "is_visible", visible_to_superusers):
             self.assertEqual(count_queries(1), count_queries(5))
+
+    def test_visible_pages_bounded_by_max_limit(self):
+        for i in range(2):
+            PurchaseTicket.objects.create(user=self.other_user, amount=1000, title=f"Other {i}")
+            PurchaseTicket.objects.create(user=self.user, amount=1000, title=f"Own {i}")
+
+        class Config:
+            API_MAX_LIMIT = 2
+
+        with patch.object(PurchaseTicket, "prefilter_visible", classmethod(prefilter_all)), \
+                patch("django_fsm_ticket.api.fsm_tickets_config", Config):
+            for params in ({}, {"limit": 100}):
+                data = self.get(self.user, self.ticket_list_url, params)
+                self.assertEqual(3, data["count"])
+                self.assertEqual(2, len(data["results"]))
+                self.assertTrue(all(t["user"] == self.user.pk for t in data["results"]))
