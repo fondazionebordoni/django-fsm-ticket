@@ -80,7 +80,10 @@ def run():
         ],
     )
     django.setup()
-    django.core.management.call_command("makemigrations", "tests")
+    # Fail if migrations are out of sync with models, instead of silently generating them
+    django.core.management.call_command(
+        "makemigrations", "django_fsm_ticket", "tests", "--check", "--dry-run"
+    )
     TestRunner = get_runner(settings)
     test_runner = TestRunner(tags=args.tag.split(",") if args.tag else None)
     failures = test_runner.run_tests(["tests"])
