@@ -1,4 +1,5 @@
 import tempfile
+import warnings
 from unittest.mock import patch
 from rest_framework.test import APIClient
 
@@ -59,6 +60,26 @@ class ResourceLimitsTest(TestCase):
                 self.assertEqual(3, data["count"])
                 self.assertEqual(2, len(data["results"]))
                 self.assertIsNotNone(data["next"])
+
+    def test_api_max_limit_unset_warns(self):
+        url = reverse("ticket-list", kwargs={"root_name": "purchase"})
+        with patch("django_fsm_ticket.api.fsm_tickets_config", object()), \
+                self.assertWarnsRegex(FutureWarning, "API_MAX_LIMIT"):
+            response = self.api_client().get(url)
+        # Unbounded, not paginated, as before 2.0
+        self.assertEqual(1, len(response.data))
+
+    def test_api_max_limit_none_does_not_warn(self):
+        url = reverse("ticket-list", kwargs={"root_name": "purchase"})
+
+        class NoLimitConfig:
+            API_MAX_LIMIT = None
+
+        with patch("django_fsm_ticket.api.fsm_tickets_config", NoLimitConfig), \
+                warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            response = self.api_client().get(url)
+        self.assertEqual(1, len(response.data))
 
     # Attachments
 

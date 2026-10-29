@@ -16,6 +16,11 @@ from django.test.utils import get_runner
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+class FSM_TICKET_CONFIG:
+    # Unbounded API pages, as before 2.0 (tests set a limit where needed)
+    API_MAX_LIMIT = None
+
+
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument(
@@ -54,6 +59,7 @@ def run():
         },
         ROOT_URLCONF="django_fsm_ticket.urls",
         FSM_TICKET_API_PREFIX="api",
+        FSM_TICKET_CONFIG=FSM_TICKET_CONFIG,
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",
             "django.contrib.sessions.middleware.SessionMiddleware",

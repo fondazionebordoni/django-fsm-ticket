@@ -808,7 +808,7 @@ A ticket can be created by doing a `POST` on the endpoint providing the data for
 
 Note that creation is restricted by calling `can_create(user)` on the `Ticket` model.
 
-By default, lists are paginated only if the `limit` parameter is provided (or if the DRF `PAGE_SIZE` setting is set), and the page size is not limited: a single request may thus load all the tickets. We recommend bounding the page size with the `API_MAX_LIMIT` option of your configuration:
+Currently, by default, lists are paginated only if the `limit` parameter is provided (or if the DRF `PAGE_SIZE` setting is set), and the page size is not limited: a single request may thus load all the tickets. We recommend bounding the page size with the `API_MAX_LIMIT` option of your configuration:
 
 ```python
 # settings.py
@@ -818,7 +818,11 @@ class FSM_TICKET_CONFIG:
     API_MAX_LIMIT = 100
 ```
 
-When `API_MAX_LIMIT` is set, lists of tickets and ticket updates are always paginated, even if no `limit` is requested, and larger limits are reduced to `API_MAX_LIMIT`. Note that this changes the format of the response for clients that do not provide `limit`: they will receive a paginated response (`count`, `next`, `previous`, `results`) instead of a plain list. You may also want to limit the rate of API requests through [DRF throttling](https://www.django-rest-framework.org/api-guide/throttling/).
+When `API_MAX_LIMIT` is set, lists of tickets and ticket updates are always paginated, even if no `limit` is requested, and larger limits are reduced to `API_MAX_LIMIT`. Note that this changes the format of the response for clients that do not provide `limit`: they will receive a paginated response (`count`, `next`, `previous`, `results`) instead of a plain list.
+
+Set `API_MAX_LIMIT` to `None` to explicitly keep pages unbounded. If you do not set it at all, a `FutureWarning` is emitted: starting from `django-fsm-ticket` 2.0, its default value will be 25.
+
+You may also want to limit the rate of API requests through [DRF throttling](https://www.django-rest-framework.org/api-guide/throttling/).
 
 
 #### Ticket detail and update

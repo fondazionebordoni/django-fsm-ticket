@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import warnings
+
 from django_filters.rest_framework import DjangoFilterBackend
 from django_fsm import TransitionNotAllowed, can_proceed, has_transition_perm
 from rest_framework import generics, status
@@ -71,18 +73,31 @@ def paginate_visible(view, queryset, is_visible):
     return [items[pk] for pk in pks], page is not None
 
 
+_UNSET = object()
+
+
 class TicketPagination(LimitOffsetPagination):
     """
     Limit-offset pagination, with page size bounded by `FSM_TICKET_CONFIG.API_MAX_LIMIT`
 
     If `API_MAX_LIMIT` is set, lists are always paginated, even if no `limit` is requested,
-    and requested limits are capped. Otherwise, lists are paginated only if `limit`
-    is requested (or a DRF `PAGE_SIZE` is set), without any cap.
+    and requested limits are capped. If it is `None` (or unset, but this is deprecated),
+    lists are paginated only if `limit` is requested (or a DRF `PAGE_SIZE` is set), without any cap.
     """
 
     def get_limit(self, request):
         limit = super().get_limit(request)
-        max_limit = getattr(fsm_tickets_config, "API_MAX_LIMIT", None)
+        # Read at each request, since config may change at runtime (e.g. with django-constance)
+        max_limit = getattr(fsm_tickets_config, "API_MAX_LIMIT", _UNSET)
+        if max_limit is _UNSET:
+            max_limit = None
+            warnings.warn(
+                "Missing API_MAX_LIMIT in FSM_TICKET_CONFIG\n"
+                "Starting from django_fsm_ticket 2.0, the default will be 25: "
+                "API lists will always be paginated, with at most 25 items per page.\n"
+                "Set API_MAX_LIMIT to the maximum page size, or to None to keep pages unbounded.",
+                FutureWarning,
+            )
         if not max_limit:
             return limit
         if limit is None:
