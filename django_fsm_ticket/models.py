@@ -3,7 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import deque
-from functools import wraps
+from email.utils import formataddr
+from functools import partial, wraps
 import logging
 from typing import Iterable
 from urllib.parse import urljoin
@@ -44,7 +45,7 @@ def user_to_mail_recipient(user):
     """
     Returns an email recipient string from a user instance
     """
-    return f"{user} <{user.email}>"
+    return formataddr((str(user), user.email))
 
 
 class Action:
@@ -288,9 +289,13 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         """
         Actually send notification.
 
-        This method is called by notify().
-        It can be overridden, e.g. to send notifications via Celery
+        This method is called by notify(), after the current transaction is committed.
+        It can be overridden, e.g. to send notifications via Celery.
+        Exceptions are logged by the caller, and do not affect other notifications.
         """
+        if not recipient_user.email:
+            logging.warning(f"Not sending notification to user #{recipient_user.pk}: no email address")
+            return
         recipient = user_to_mail_recipient(recipient_user)
         send_mail(
             subject,
@@ -389,8 +394,13 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
         even to ticket_update.user if they belong to `additional_users`.
 
         In any case, users for whom `ticket_update.is_visible()` is False
-        are not notified. Notice that `is_visible()` receives a request
-        surrogate, which only provides the `user` attribute.
+        are not notified. (Notice that `is_visible()` receives a request
+        surrogate, which only provides the `user` attribute.)
+
+        Notifications are rendered immediately, but sent only after the current transaction
+        is committed (immediately, if there is no transaction), and are not sent at all if
+        it is rolled back. Errors in sending a notification are logged, and do not affect
+        the ticket workflow or other notifications.
 
         Config-defined notification level can be overridden using the
         `notification_level` parameter.
@@ -430,7 +440,17 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
             ).splitlines()
             subject = lines[0]
             msg = "\n".join(lines[1:])
-            self.send_notification(subject, msg, user)
+            # Do not notify about updates which might be rolled back
+            transaction.on_commit(partial(self._send_notification_safely, subject, msg, user))
+
+    def _send_notification_safely(self, subject, message, recipient_user):
+        """
+        Send a notification, logging errors: they shall not affect other notifications
+        """
+        try:
+            self.send_notification(subject, message, recipient_user)
+        except Exception:
+            logging.exception(f"Error sending notification about ticket #{self.pk} to user #{recipient_user.pk}")
 
     @classmethod
     def get_all_open_tickets(cls):
