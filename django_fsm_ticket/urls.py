@@ -12,8 +12,8 @@ from . import views
 
 
 urlpatterns = [
-    path("download_attachment/<int:id>/<str:uuid>", views.download_attachment, name="ticket_download_attachment"),
-    path("delete_attachment/<int:id>/<str:uuid>", views.delete_attachment, name="ticket_delete_attachment"),
+    path("download_attachment/<int:id>/<uuid:uuid>", views.download_attachment, name="ticket_download_attachment"),
+    path("delete_attachment/<int:id>/<uuid:uuid>", views.delete_attachment, name="ticket_delete_attachment"),
     path("<str:root_name>", views.all_tickets, name="all_tickets"),
     path("<str:root_name>/create", views.create_ticket, name="create_ticket"),
     path("<str:root_name>/<int:pk>", views.single_ticket, name="single_ticket"),

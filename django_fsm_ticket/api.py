@@ -5,7 +5,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django_fsm import TransitionNotAllowed, can_proceed, has_transition_perm
 from rest_framework import generics, status
-from rest_framework.exceptions import APIException, PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +16,7 @@ from django.db import transaction
 from django.http import Http404
 from django.utils.translation import gettext as _
 
+from django_fsm_ticket.base_views import ActionError
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
 from django_fsm_ticket.models import Ticket, TicketUpdate, engine_registry, fsm_tickets_config
 from django_fsm_ticket.permissions import (
@@ -89,6 +90,15 @@ class TicketPagination(LimitOffsetPagination):
         return min(limit, max_limit)
 
 
+def orderable_fields(model, exclude_fields):
+    """
+    Return the names of the fields of `model` which can be used for ordering
+
+    Excluded fields cannot, since ordering would disclose their values
+    """
+    return [f.name for f in model._meta.fields if f.name not in exclude_fields]
+
+
 def ticket_list_factory(request, root_name, *args, **kwargs):
     try:
         ticket_engine = engine_registry[root_name]
@@ -122,7 +132,10 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
             if ticket_engine.TicketClass.filterset_class
             else ticket_filter_factory(ticket_engine.TicketClass)
         )
-        ordering_fields = "__all__"
+        ordering_fields = orderable_fields(
+            ticket_engine.TicketClass,
+            ["polymorphic_ctype"] + ticket_engine.TicketClass.exclude_fields,
+        )
         search_fields = ticket_engine.TicketClass.search_fields
         ordering = ["-id"]
 
@@ -194,8 +207,9 @@ def ticket_detail_factory(request, root_name, *args, **kwargs):
 
             permission_classes = [
                 IsAuthenticated,
-                TicketDetailPermission,
+                # Visibility first: non-visible tickets are not found (404), rather than forbidden (403)
                 PrefilteredTicketVisibilityPermission,
+                TicketDetailPermission,
             ]
             queryset = ticket_engine.TicketClass.prefilter_visible(request)
 
@@ -266,12 +280,14 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
             with transaction.atomic():
                 # Create the ticket update
                 ticket_update = serializer.save()
-                # Call the action function
+                # Call the action function; errors raised by the action are shown, as in HTML views
                 try:
                     transition(ticket_update)
                 except TransitionNotAllowed:
                     # A concurrent action changed the state of the ticket
                     raise Conflict()
+                except ActionError as e:
+                    raise ValidationError({"non_field_errors": [str(e)]})
                 ticket.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -322,7 +338,9 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
             OrderingFilter,
             DjangoFilterBackend,
         ]
-        ordering_fields = "__all__"
+        ordering_fields = orderable_fields(
+            TicketUpdate, ["polymorphic_ctype"] + TicketUpdate.exclude_fields
+        )
         search_fields = ["notes"]
         filterset_class = TicketUpdateFilter
         ordering = ["-id"]
@@ -342,7 +360,9 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
                 ticket_update_serializer_class = ticket_update_list_serializer_factory(
                     ticket_update.__class__, ticket_engine
                 )
-            serializer = ticket_update_serializer_class(ticket_update)
+            serializer = ticket_update_serializer_class(
+                ticket_update, context=self.get_serializer_context()
+            )
             return serializer.data
 
         def list(self, request, *args, **kwargs):
@@ -408,8 +428,9 @@ def ticket_update_detail_factory(request, root_name, *args, **kwargs):
 
         permission_classes = [
             IsAuthenticated,
-            TicketDetailPermission,
+            # Visibility first: non-visible ticket updates are not found (404), rather than forbidden (403)
             TicketUpdateVisibilityPermission,
+            TicketDetailPermission,
         ]
         queryset = TicketUpdate.objects.filter(ticket__polymorphic_ctype=ctype)
         serializer_class = ticket_update_list_serializer_factory(

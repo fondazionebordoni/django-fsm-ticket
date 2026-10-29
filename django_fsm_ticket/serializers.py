@@ -88,7 +88,7 @@ def ticket_detail_serializer_factory(ticket_engine):
                     ticket_update_serializer_class = (
                         ticket_update_list_serializer_factory(type(ticket_update))
                     )
-                serializer = ticket_update_serializer_class(ticket_update)
+                serializer = ticket_update_serializer_class(ticket_update, context=self.context)
                 updates_data.append(serializer.data)
             return updates_data
 
@@ -178,6 +178,15 @@ def ticket_update_list_serializer_factory(ticket_update_model, ticket_engine=Non
             if obj.user:
                 return user_verbose(obj.user)
             return None
+
+        def to_representation(self, instance):
+            data = super().to_representation(instance)
+            # As in HTML views, deleted attachments can only be downloaded by superusers
+            if isinstance(instance, AttachmentTicketUpdate) and instance.deleted and "file" in data:
+                request = self.context.get("request")
+                if request is None or not request.user.is_superuser:
+                    data["file"] = None
+            return data
 
         class Meta:
             model = ticket_update_model

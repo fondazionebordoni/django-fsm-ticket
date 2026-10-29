@@ -54,7 +54,7 @@ def ticketupdate_visible_to_user(ticketupdate_pk_param_name='ticketupdate_pk'):
                     f"Function {f.__name__} did not receive a required parameter named {ticketupdate_pk_param_name}"
                 )
             except TicketUpdate.DoesNotExist:
-                raise Http404()
+                return redirect_to_login(request.path)
             if not tu.ticket.check_visibility(request) or not tu.is_visible(request):
                 return redirect_to_login(request.path)
             return f(request, *args, **kwargs)
