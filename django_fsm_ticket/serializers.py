@@ -5,6 +5,7 @@
 from rest_framework import serializers
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 
 from django_fsm_ticket.models import Ticket
@@ -93,7 +94,37 @@ def ticket_detail_serializer_factory(ticket_engine):
     return TicketSerializer
 
 
-class TicketUpdateBaseCreateSerializer(GetUserMixin, serializers.ModelSerializer):
+class LimitQuerysetsMixin:
+    """
+    Limit the choices of related fields as `limit_view_querysets(ticket)` does in HTML views
+
+    To be used in serializers of ticket updates, e.g. in a custom `write_serializer`.
+    The ticket shall be passed in serializer context, as action API view does:
+    validation fails if it is missing.
+    """
+
+    def get_fields(self):
+        fields = super().get_fields()
+        ticket = self.context.get("ticket")
+        if ticket is not None:
+            limit_querysets = self.Meta.model.limit_view_querysets(ticket)
+            for name, queryset in limit_querysets.items():
+                field = fields[name]
+                # Many-to-many fields wrap the related field
+                getattr(field, "child_relation", field).queryset = queryset
+        return fields
+
+    def validate(self, attrs):
+        if self.context.get("ticket") is None:
+            raise ImproperlyConfigured(
+                f"{type(self).__name__} requires a 'ticket' in serializer context"
+            )
+        return super().validate(attrs)
+
+
+class TicketUpdateBaseCreateSerializer(
+    LimitQuerysetsMixin, GetUserMixin, serializers.ModelSerializer
+):
 
     def create(self, validated_data):
         user = self._get_current_user()

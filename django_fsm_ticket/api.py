@@ -234,7 +234,7 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
             serializer_class = self.get_serializer_class()
             serializer = serializer_class(
                 data=data,
-                context={"request": request, "action": action},
+                context={"request": request, "action": action, "ticket": ticket},
             )
             serializer.is_valid(raise_exception=True)
             transition = getattr(ticket, action_name)

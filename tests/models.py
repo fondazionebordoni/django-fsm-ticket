@@ -1,5 +1,6 @@
 from django_fsm_ticket.models import (
     AttachmentTicketUpdate,
+    DeleteAttachmentTicketUpdate,
     Ticket,
     TicketEngine,
     TicketUpdate,
@@ -72,6 +73,18 @@ class PurchaseTicket(Ticket):
     def comment(self, ticket_update=None):
         """
         Add a comment without changing ticket state
+        """
+        return ticket_update
+
+    @action(
+        ticket_update_model=DeleteAttachmentTicketUpdate,
+        priority=0,
+        verbose_name="Report attachment",
+    )
+    @transition("state", "purchased", "purchased")
+    def report_attachment(self, ticket_update=None):
+        """
+        Refer to an attachment of this ticket
         """
         return ticket_update
 
