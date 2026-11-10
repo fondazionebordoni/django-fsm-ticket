@@ -97,3 +97,52 @@ class StaleTicketTest(TestCase):
         self.stale.comment(TicketUpdate(user=self.admin))
         self.ticket.refresh_from_db()
         self.assertEqual(5, self.ticket.amount)
+
+
+class StaleTicketModifyTest(TestCase):
+    """
+    Modifying a ticket via API shall not undo an action committed
+    after the ticket was loaded
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin",
+            email="testadmin@fub.it",
+            password="top_secret",
+            is_superuser=True,
+        )
+        self.ticket = PurchaseTicket.objects.create(user=self.admin, amount=1000, title="Test title")
+        # Loaded before a concurrent action is committed
+        self.stale = PurchaseTicket.objects.get(pk=self.ticket.pk)
+        self.ticket.approve(TicketUpdate(user=self.admin))
+
+    def modify(self, method="patch", **data):
+        client = APIClient()
+        client.force_login(user=self.admin)
+        url = reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk})
+        with patch.object(generics.GenericAPIView, "get_object", return_value=self.stale):
+            return getattr(client, method)(url, data, format="json")
+
+    def assertApproved(self):
+        ticket = PurchaseTicket.objects.get(pk=self.ticket.pk)
+        self.assertEqual("approved", ticket.state)
+        self.assertEqual(TicketUpdate.objects.get(), ticket.last_update)
+        return ticket
+
+    def test_patch_keeps_concurrent_action(self):
+        response = self.modify(title="New title")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("approved", response.data["state"])
+        self.assertEqual("New title", self.assertApproved().title)
+
+    def test_put_keeps_concurrent_action(self):
+        response = self.modify("put", title="New title", amount=2000)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("New title", self.assertApproved().title)
+
+    def test_permission_checked_against_current_state(self):
+        with patch.object(PurchaseTicket, "can_modify", lambda ticket, user: ticket.state == "new"):
+            response = self.modify(title="New title")
+        self.assertEqual(403, response.status_code)
+        self.assertEqual("Test title", self.assertApproved().title)

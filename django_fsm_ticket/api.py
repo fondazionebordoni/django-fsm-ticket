@@ -260,6 +260,19 @@ def ticket_detail_factory(request, root_name, *args, **kwargs):
                     )
                 return ticket_detail_serializer_factory(ticket_engine)
 
+            def perform_update(self, serializer):
+                """
+                Save the ticket without overwriting the outcome of a concurrent action
+
+                The whole ticket is saved: lock it and reload its state, as actions do, then check
+                permissions again, since they may depend on the state.
+                """
+                with transaction.atomic():
+                    ticket = serializer.instance
+                    ticket._lock_for_transition()
+                    self.check_object_permissions(self.request, ticket)
+                    serializer.save()
+
         view = TicketDetailApiView
     return view.as_view()(request, *args, **kwargs)
 
