@@ -786,15 +786,19 @@ class DeleteAttachmentTicketUpdate(TicketUpdate):
 
     ```python
     @action(
-        verbose_name='Elimina file',
+        verbose_name='Delete file',
         ticket_update_model=TicketUpdate,
         priority=0,
     )
-    @transition('state', 'new', 'new', permission=can_delete_attachment)
-    @transition('state', 'rejected', 'rejected', permission=can_delete_attachment)
+    @transition('state', 'new', 'new', permission=is_superuser)
+    @transition('state', 'rejected', 'rejected', permission=is_superuser)
     def delete_attachment(self, ticket_update=None):
         return ticket_update
     ```
+
+    where `is_superuser(ticket, user)` is a transition permission. Also override
+    `Ticket.can_delete_attachment(request)`, which receives the request instead,
+    to show the delete button.
     """
     template_fields = 'django_fsm_ticket/partials/delete_attachment_tu_fields.html'
 

@@ -630,14 +630,14 @@ If you want to allow your users to delete a previously uploaded attachment, simp
     ticket_update_model=TicketUpdate,
     priority=0,
 )
-@transition('state', 'purchased', 'purchased', permission=can_delete_attachment)
+@transition('state', 'purchased', 'purchased', permission=is_superuser)
 def delete_attachment(self, ticket_update=None):
     return ticket_update
 ```
 
 Being a 0-priority action, `django-fsm-ticket` will not display an action button. However, a delete button will be displayed in the "Attachments" table at the top of the ticket page, next to the file to be deleted (not in the card of the ticket update).
 
-The button is only displayed if the method `can_delete_attachment(user)` of your ticket class returns `True`. The default implementation returns `False`, so you **must** override it, otherwise no delete button will ever appear. The delete view checks both this method and the `delete_attachment` transition: the file can only be deleted if the transition is allowed from the current state of the ticket, and its `permission` (if any) is granted to the current user. For example, to allow superusers only:
+The button is only displayed if the method `can_delete_attachment(request)` of your ticket class returns `True`. The default implementation returns `False`, so you **must** override it, otherwise no delete button will ever appear. The delete view checks both this method and the `delete_attachment` transition: the file can only be deleted if the transition is allowed from the current state of the ticket, and its `permission` (if any) is granted to the current user. Notice that `can_delete_attachment()` receives the request, while transition permissions receive the ticket and the user: do not use the same function for both. For example, to allow superusers only (consistently with the `is_superuser` permission above):
 
 ```python
 # purchase/models.py
@@ -645,8 +645,8 @@ The button is only displayed if the method `can_delete_attachment(user)` of your
 class PurchaseTicket(Ticket):
     # ...
 
-    def can_delete_attachment(self, user):
-        return user.is_superuser
+    def can_delete_attachment(self, request):
+        return request.user.is_superuser
 ```
 
 ## Calling actions programmatically
