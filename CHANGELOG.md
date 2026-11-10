@@ -55,6 +55,10 @@ See the linked advisories for details, affected configurations and workarounds.
 
 - `user_to_mail_recipient()` always returns a plain `str`, even when the email address is a lazy object
   (e.g. read from django-constance): notifications can be serialized, e.g. to be sent through Celery.
+- REST API: ticket list, detail and action endpoints now call `prefilter_visible()` with the request
+  authenticated by DRF. With authentication methods other than the session (e.g. Basic, Token, JWT),
+  it used to receive an anonymous user, so these endpoints showed no tickets, or the ones visible
+  to anonymous users.
 
 ### Deprecated
 

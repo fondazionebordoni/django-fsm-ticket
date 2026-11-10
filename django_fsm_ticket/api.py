@@ -152,7 +152,11 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
         permission_classes = [
             ticket_list_permission_factory(ticket_engine.TicketClass),
         ]
-        queryset = ticket_engine.TicketClass.prefilter_visible(request)
+
+        def get_queryset(self):
+            # Use the request authenticated by DRF (not the Django request received by the factory,
+            # whose user is the one of the session, if any)
+            return ticket_engine.TicketClass.prefilter_visible(self.request)
 
         pagination_class = TicketPagination
         filter_backends = [
@@ -245,7 +249,11 @@ def ticket_detail_factory(request, root_name, *args, **kwargs):
                 PrefilteredTicketVisibilityPermission,
                 TicketDetailPermission,
             ]
-            queryset = ticket_engine.TicketClass.prefilter_visible(request)
+
+            def get_queryset(self):
+                # Use the request authenticated by DRF (not the Django request received by the factory,
+                # whose user is the one of the session, if any)
+                return ticket_engine.TicketClass.prefilter_visible(self.request)
 
             def get_serializer_class(self):
                 if self.request.method in ["POST", "PATCH", "PUT"]:
@@ -300,7 +308,11 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
             IsAuthenticated,
             PrefilteredTicketVisibilityPermission,
         ]
-        queryset = ticket_engine.TicketClass.prefilter_visible(request)
+
+        def get_queryset(self):
+            # Use the request authenticated by DRF (not the Django request received by the factory,
+            # whose user is the one of the session, if any)
+            return ticket_engine.TicketClass.prefilter_visible(self.request)
 
         def get_serializer_class(self):
             if action.ticket_update_model.write_serializer:
