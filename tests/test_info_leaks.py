@@ -78,6 +78,38 @@ class InfoLeaksTest(TestCase):
             for file in files:
                 self.assertEqual(hidden, file is None)
 
+    def test_attachment_file_is_download_url(self):
+        """The API provides the URL of the download view, not the URL of the file in the storage"""
+        self.ticket.purchased(AttachmentTicketUpdate(user=self.user, file=SimpleUploadedFile("a.pdf", b"content")))
+        attachment = AttachmentTicketUpdate.objects.get()
+        download_url = "http://testserver" + reverse(
+            "ticket_download_attachment", args=[attachment.pk, attachment.uuid]
+        )
+        urls = [
+            reverse("ticket-update-list", kwargs={"root_name": "purchase"}),
+            reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk}),
+            reverse("ticket-update-detail", kwargs={"root_name": "purchase", "pk": attachment.pk}),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                data = self.api_get(self.user, url).data
+                if isinstance(data, dict):
+                    data = data.get("updates", [data])
+                self.assertEqual([download_url], [tu["file"] for tu in data if "file" in tu])
+        # The URL is subject to visibility checks
+        client = Client()
+        client.force_login(self.user)
+        response = client.get(download_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(b"content", b"".join(response.streaming_content))
+        client.force_login(self.other_user)
+        self.assertEqual(302, client.get(download_url).status_code)
+
+    def test_attachment_without_file(self):
+        self.ticket.purchased(AttachmentTicketUpdate(user=self.user))
+        url = reverse("ticket-update-list", kwargs={"root_name": "purchase"})
+        self.assertEqual([None], [tu["file"] for tu in self.api_get(self.user, url).data if "file" in tu])
+
     def test_not_visible_ticket_not_found(self):
         url = reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk})
         with patch.object(PurchaseTicket, "prefilter_visible", classmethod(prefilter_all)):

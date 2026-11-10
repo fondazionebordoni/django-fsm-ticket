@@ -7,6 +7,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.urls import reverse
 from django.utils.module_loading import import_string
 
 from django_fsm_ticket.models import AttachmentTicketUpdate, Ticket
@@ -95,6 +96,31 @@ def ticket_detail_serializer_factory(ticket_engine):
     return TicketSerializer
 
 
+class AttachmentDownloadUrlMixin:
+    """
+    Represent the `file` of attachment ticket updates as the URL of the download view
+
+    The download view checks the visibility of the ticket and of the ticket update, while the URL
+    of the file in the storage is not subject to any check (and requires the storage to be served).
+    As in HTML views, deleted attachments can only be downloaded by superusers.
+
+    To be used in serializers of ticket updates, e.g. in a custom `list_serializer`.
+    """
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if isinstance(instance, AttachmentTicketUpdate) and "file" in data:
+            request = self.context.get("request")
+            if not instance.file:
+                data["file"] = None
+            elif instance.deleted and (request is None or not request.user.is_superuser):
+                data["file"] = None
+            else:
+                url = reverse("ticket_download_attachment", args=[instance.pk, instance.uuid])
+                data["file"] = request.build_absolute_uri(url) if request is not None else url
+        return data
+
+
 class LimitQuerysetsMixin:
     """
     Limit the choices of related fields as `limit_view_querysets(ticket)` does in HTML views
@@ -124,7 +150,7 @@ class LimitQuerysetsMixin:
 
 
 class TicketUpdateBaseCreateSerializer(
-    LimitQuerysetsMixin, GetUserMixin, serializers.ModelSerializer
+    AttachmentDownloadUrlMixin, LimitQuerysetsMixin, GetUserMixin, serializers.ModelSerializer
 ):
 
     def validate_file(self, value):
@@ -166,7 +192,7 @@ def ticket_update_create_serializer_factory(ticket_update_model):
 
 def ticket_update_list_serializer_factory(ticket_update_model, ticket_engine=None):
 
-    class TicketUpdateListSerializer(serializers.ModelSerializer):
+    class TicketUpdateListSerializer(AttachmentDownloadUrlMixin, serializers.ModelSerializer):
         ticket = (
             ticket_list_serializer_factory(ticket_engine)()
             if ticket_engine
@@ -178,15 +204,6 @@ def ticket_update_list_serializer_factory(ticket_update_model, ticket_engine=Non
             if obj.user:
                 return user_verbose(obj.user)
             return None
-
-        def to_representation(self, instance):
-            data = super().to_representation(instance)
-            # As in HTML views, deleted attachments can only be downloaded by superusers
-            if isinstance(instance, AttachmentTicketUpdate) and instance.deleted and "file" in data:
-                request = self.context.get("request")
-                if request is None or not request.user.is_superuser:
-                    data["file"] = None
-            return data
 
         class Meta:
             model = ticket_update_model

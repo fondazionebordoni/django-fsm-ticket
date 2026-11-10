@@ -599,12 +599,14 @@ if ticket_update.file:
 Relative to a `TicketUpdate`, an `AttachmentTicketUpdate` has three additional fields:
 
 - `file`: the optional attached file.
-- `deleted`: a flag that can be set to `True` to mark the file as deleted, so it will no longer be downloadable (but still exists in the database).
+- `deleted`: a flag that can be set to `True` to mark the file as deleted, so it will no longer be downloadable through `django-fsm-ticket` (except by superusers). The file is not removed: it still exists in the database and in the storage.
 - `name`: the original name of the file, or any other name that can be set in your action method.
 
 It is useful to keep track of the original filename because Django will alter the stored filename to avoid name clashes. This is exactly what we did in our `purchased` action method.
 
-The template for our `AttachmentTicketUpdate` is already defined in `django-fsm-ticket`, as well as the view that handles file download only for authorized users, so no other configuration is needed. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
+The template for our `AttachmentTicketUpdate` is already defined in `django-fsm-ticket`, as well as the view that handles file download only for authorized users. As always, you are free to customize the template, as well as derive a new model from `AttachmentTicketUpdate` to add further fields.
+
+> **Keep the storage of attachments private.** Attachments are saved by the default file storage of your project, i.e. in `MEDIA_ROOT` unless you configured a different one, with the name chosen by the uploader (e.g. `invoice.pdf`). Access control is only enforced by the download view of `django-fsm-ticket`, which checks the visibility of the ticket and of the ticket update. Django does not serve `MEDIA_ROOT` by itself: if you configure your web server (or a public bucket) to serve it, e.g. because another app of your project needs public uploads, then anyone who knows or guesses the name of an attachment can download it without any check, even if it has been marked as deleted, and uploaded HTML or SVG files are served from your domain. In this case, use a private file storage as the default one, and a separate public storage for the files that need it.
 
 By default, the size of attached files is not limited. You can set a limit, in bytes, through the `max_file_size` attribute. To set different limits for different actions, derive a model for each action; a proxy model is enough, if you do not need further fields:
 
@@ -888,6 +890,9 @@ The default view provides
 - searching is only provided on `notes` since it is the common field of all `TicketUpdate`s
 
 This view only allows `GET` requests.
+
+
+> **Note:** for an `AttachmentTicketUpdate`, the `file` field is the URL of the download view of `django-fsm-ticket`, which checks the visibility of the ticket and of the ticket update, not the URL of the file in the storage. It is `null` if there is no file, or if the attachment has been deleted (except for superusers). The download view is a regular Django view: it authenticates users through the Django session, not through the authentication classes of Django REST framework. If you write your own serializers for attachments, include `AttachmentDownloadUrlMixin` (from `django_fsm_ticket.serializers`) to get the same representation.
 
 
 #### Ticket update detail

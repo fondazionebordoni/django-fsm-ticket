@@ -602,6 +602,8 @@ class TicketViewTest(TestCase):
             format="multipart",
         )
         self.assertEqual(201, response.status_code, response.data)
+        # The response provides the URL of the download view
+        self.assertIn("/download_attachment/", response.data["file"])
 
         self.ticket.refresh_from_db()
         self.assertEqual(3, TicketUpdate.objects.filter(ticket=self.ticket).count())
@@ -619,4 +621,4 @@ class TicketViewTest(TestCase):
         self.assertEqual("Approve note", update.get("notes"))
         update = obj.get("updates")[2]
         self.assertEqual("Purchase note", update.get("notes"))
-        self.assertIsNotNone(update.get("file"))
+        self.assertIn("/download_attachment/", update.get("file"))
