@@ -13,15 +13,15 @@ This release fixes several security issues. All users are encouraged to upgrade.
 See the linked advisories for details, affected configurations and workarounds.
 
 - REST API: internal ticket fields (`state`, `ts`, `last_update`, `user`) are now read-only
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-v59j-g75x-9xmm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v59j-g75x-9xmm), CVE-xxxx-xxxxx).
 - REST API: the action endpoint now enforces `Ticket.is_visible()`
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-v4xh-28jr-f5v5](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v4xh-28jr-f5v5), CVE-xxxx-xxxxx).
 - Notifications and reminders now honour `TicketUpdate.is_visible()`
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-GHSA-58xg-c7pj-9qqp](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-58xg-c7pj-9qqp), CVE-xxxx-xxxxx).
 - REST API: counts and pages of list endpoints no longer depend on non-visible items
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-m935-5m8q-7wgm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-m935-5m8q-7wgm), CVE-xxxx-xxxxx).
 - Attachment deletion is now atomic, and enforces the state and permission of the `delete_attachment` transition
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-w8vm-x6rg-g58x](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-w8vm-x6rg-g58x), CVE-xxxx-xxxxx).
 
 ### Security hardening
 
