@@ -98,6 +98,7 @@ def download_attachment(request, id, uuid):
     return serve_modelfile(atu.file, atu.name)
 
 
+@csrf_protect
 @ticketupdate_visible_to_user("id")
 @require_POST
 @transaction.atomic

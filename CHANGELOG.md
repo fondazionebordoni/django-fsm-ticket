@@ -41,6 +41,8 @@ See the linked advisories for details, affected configurations and workarounds.
 - Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API).
 - Invalid attachment UUIDs in URLs now return 404 instead of 500.
 - REST API: `ActionError` raised by actions now returns 400 instead of 500, as in HTML views.
+- The view deleting attachments now enforces CSRF protection by itself, as the other views that write data,
+  even if `CsrfViewMiddleware` is not enabled.
 
 ### Added
 

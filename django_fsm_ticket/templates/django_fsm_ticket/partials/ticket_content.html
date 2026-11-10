@@ -36,7 +36,6 @@
 											{% endblocktrans %}
 										</div>
 										<div class="modal-footer">
-											{# VULN-3: use POST + CSRF for state-changing delete #}
 											<form method="post" action="{% url 'ticket_delete_attachment' a.id a.uuid %}">
 												{% csrf_token %}
 												<button type="submit" class="btn btn-danger">{% translate "Delete" %}</button>

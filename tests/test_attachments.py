@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.conf import settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from django_fsm_ticket.models import AttachmentTicketUpdate, DeleteAttachmentTicketUpdate
@@ -26,8 +27,8 @@ class DeleteAttachmentTest(TestCase):
         self.ticket.purchased(self.attachment)
         self.ticket.save()
 
-    def delete(self, user):
-        client = Client()
+    def delete(self, user, enforce_csrf_checks=False):
+        client = Client(enforce_csrf_checks=enforce_csrf_checks)
         client.force_login(user=user)
         url = reverse("ticket_delete_attachment", args=(self.attachment.id, self.attachment.uuid))
         return client.post(url)
@@ -78,4 +79,16 @@ class DeleteAttachmentTest(TestCase):
                 patch("django_fsm_ticket.views.has_transition_perm", return_value=True):
             response = self.delete(self.admin)
         self.assertEqual(404, response.status_code)
+        self.assertNotDeleted()
+
+    def test_delete_attachment_csrf(self):
+        """
+        Without a CSRF token, nothing is deleted, even without CsrfViewMiddleware
+        """
+        middleware = [
+            m for m in settings.MIDDLEWARE if m != "django.middleware.csrf.CsrfViewMiddleware"
+        ]
+        with override_settings(MIDDLEWARE=middleware):
+            response = self.delete(self.admin, enforce_csrf_checks=True)
+        self.assertEqual(403, response.status_code)
         self.assertNotDeleted()
