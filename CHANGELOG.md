@@ -17,7 +17,7 @@ See the linked advisories for details, affected configurations and workarounds.
 - REST API: the action endpoint now enforces `Ticket.is_visible()`
   ([GHSA-v4xh-28jr-f5v5](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v4xh-28jr-f5v5), CVE-xxxx-xxxxx).
 - Notifications and reminders now honour `TicketUpdate.is_visible()`
-  ([GHSA-GHSA-58xg-c7pj-9qqp](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-58xg-c7pj-9qqp), CVE-xxxx-xxxxx).
+  ([GHSA-58xg-c7pj-9qqp](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-58xg-c7pj-9qqp), CVE-xxxx-xxxxx).
 - REST API: counts and pages of list endpoints no longer depend on non-visible items
   ([GHSA-m935-5m8q-7wgm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-m935-5m8q-7wgm), CVE-xxxx-xxxxx).
 - Attachment deletion is now atomic, and enforces the state and permission of the `delete_attachment` transition
@@ -38,6 +38,10 @@ See the linked advisories for details, affected configurations and workarounds.
 - Attachment downloads are streamed from storage, without temporary copies.
 - REST API: ordering on fields listed in `exclude_fields` is no longer allowed.
 - REST API: the file of deleted attachments is only shown to superusers, as in HTML views.
+- REST API: the `file` field of attachment ticket updates is now the URL of the download view, which enforces
+  visibility, instead of the URL of the file in the storage.
+- REST API: modifying a ticket (`PUT`/`PATCH`) now locks it and reloads its state, so that it can no longer
+  undo an action committed in the meantime. `can_modify()` is checked again against the current state.
 - Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API).
 - Invalid attachment UUIDs in URLs now return 404 instead of 500.
 - REST API: `ActionError` raised by actions now returns 400 instead of 500, as in HTML views.
@@ -54,6 +58,10 @@ See the linked advisories for details, affected configurations and workarounds.
 - `AttachmentTicketUpdate.max_file_size`: maximum size of attached files, configurable per action
   by using a subclass (even a proxy model) as `ticket_update_model`.
 - `LimitQuerysetsMixin`, to apply `limit_view_querysets()` in custom `write_serializer`s.
+- `AttachmentDownloadUrlMixin`, to get the same representation of the `file` field of attachments
+  in custom serializers.
+- `django_fsm_ticket.api.api_renderers()`, to apply the renderers of generated API views
+  (no browsable API unless `DEBUG = True`) to custom API views.
 
 ### Fixed
 
@@ -79,8 +87,17 @@ See the linked advisories for details, affected configurations and workarounds.
 
 ### Upgrade notes
 
+- **Dependencies:** `django-polymorphic` 4.3.1 or later is now required: earlier versions conflict with
+  the natural keys of tickets and ticket updates.
+- **Attachments in the REST API:** the `file` field of attachment ticket updates contains the URL of the download
+  view (`.../download_attachment/<id>/<uuid>`) instead of the URL of the file in the storage (e.g. `/media/invoice.pdf`).
+  Clients that built their own links from the old value must use the new one as it is. The download view
+  authenticates users through the Django session. Custom serializers should include `AttachmentDownloadUrlMixin`.
+- **Ticket modification via API** runs in a transaction and locks the ticket, as actions do. If `can_modify()`
+  depends on the state of the ticket, a modification is refused (403) when a concurrent action has changed
+  the state in the meantime.
 - **Deleted attachments:** if you hide some attachments by overriding `is_visible()`, the updates that track
-  their deletion are now hidden to the same users, in HTML pages, in the REST API and in notifications.
+  their deletion are now hidden from the same users, in HTML pages, in the REST API and in notifications.
 - **Browsable API:** unless `DEBUG = True`, generated API views no longer serve the browsable API
   (`?format=api` returns 404, requests accepting only HTML return 406). Custom API views are not affected:
   use `django_fsm_ticket.api.api_renderers()` to get the same behavior.
