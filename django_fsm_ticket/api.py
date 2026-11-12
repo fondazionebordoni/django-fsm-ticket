@@ -23,7 +23,13 @@ from django.utils.translation import gettext as _
 
 from django_fsm_ticket.base_views import ActionError
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
-from django_fsm_ticket.models import Ticket, TicketUpdate, engine_registry, fsm_tickets_config
+from django_fsm_ticket.models import (
+    DeleteAttachmentTicketUpdate,
+    Ticket,
+    TicketUpdate,
+    engine_registry,
+    fsm_tickets_config,
+)
 from django_fsm_ticket.permissions import (
     ticket_list_permission_factory,
     TicketDetailPermission,
@@ -45,8 +51,10 @@ class Conflict(APIException):
     default_code = "conflict"
 
 
-# Default implementations, which do not hide anything
-DEFAULT_IS_VISIBLE = (Ticket.is_visible, TicketUpdate.is_visible)
+# Default implementations, which do not hide anything by themselves.
+# DeleteAttachmentTicketUpdate delegates to the attachment: if attachments are hidden by an override
+# of AttachmentTicketUpdate.is_visible() (or of a subclass), it is detected anyway.
+DEFAULT_IS_VISIBLE = (Ticket.is_visible, TicketUpdate.is_visible, DeleteAttachmentTicketUpdate.is_visible)
 
 
 def overrides_is_visible(cls):

@@ -805,6 +805,12 @@ class DeleteAttachmentTicketUpdate(TicketUpdate):
 
     attachment = models.ForeignKey(AttachmentTicketUpdate, on_delete=models.CASCADE)
 
+    def is_visible(self, request):
+        """
+        The deletion shows the name of the attachment: by default, it is visible to those who see the attachment
+        """
+        return self.attachment.is_visible(request)
+
     @classmethod
     def limit_view_querysets(cls, ticket):
         # Only attachments of the same ticket can be deleted

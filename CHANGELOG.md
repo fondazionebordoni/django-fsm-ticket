@@ -41,6 +41,8 @@ See the linked advisories for details, affected configurations and workarounds.
 - Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API).
 - Invalid attachment UUIDs in URLs now return 404 instead of 500.
 - REST API: `ActionError` raised by actions now returns 400 instead of 500, as in HTML views.
+- The ticket update that tracks the deletion of an attachment (`DeleteAttachmentTicketUpdate`) is now visible
+  only to the users who can see the attachment, since it shows its name.
 - The view deleting attachments now enforces CSRF protection by itself, as the other views that write data,
   even if `CsrfViewMiddleware` is not enabled.
 
@@ -77,6 +79,8 @@ See the linked advisories for details, affected configurations and workarounds.
 
 ### Upgrade notes
 
+- **Deleted attachments:** if you hide some attachments by overriding `is_visible()`, the updates that track
+  their deletion are now hidden to the same users, in HTML pages, in the REST API and in notifications.
 - **Browsable API:** unless `DEBUG = True`, generated API views no longer serve the browsable API
   (`?format=api` returns 404, requests accepting only HTML return 406). Custom API views are not affected:
   use `django_fsm_ticket.api.api_renderers()` to get the same behavior.

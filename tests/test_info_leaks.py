@@ -8,8 +8,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
+from django_fsm_ticket import api
 from django_fsm_ticket.base_views import ActionError
-from django_fsm_ticket.models import AttachmentTicketUpdate, TicketUpdate
+from django_fsm_ticket.models import AttachmentTicketUpdate, DeleteAttachmentTicketUpdate, TicketUpdate
 from tests.models import PurchaseTicket
 
 
@@ -109,6 +110,43 @@ class InfoLeaksTest(TestCase):
         self.ticket.purchased(AttachmentTicketUpdate(user=self.user))
         url = reverse("ticket-update-list", kwargs={"root_name": "purchase"})
         self.assertEqual([None], [tu["file"] for tu in self.api_get(self.user, url).data if "file" in tu])
+
+    def hidden_attachment(self):
+        self.ticket.purchased(
+            AttachmentTicketUpdate(user=self.user, file=SimpleUploadedFile("internal-report.pdf", b"x"))
+        )
+        self.ticket.save()
+        return AttachmentTicketUpdate.objects.get()
+
+    def test_deletion_of_hidden_attachment_is_hidden(self):
+        """The update that tracks a deletion shows the name of the attachment: same visibility"""
+        attachment = self.hidden_attachment()
+        delete_url = reverse("ticket_delete_attachment", args=[attachment.pk, attachment.uuid])
+        ticket_url = reverse("single_ticket", args=["purchase", self.ticket.pk])
+        api_url = reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk})
+        list_url = reverse("ticket-update-list", kwargs={"root_name": "purchase"})
+        with patch.object(AttachmentTicketUpdate, "is_visible", visible_to_superusers):
+            self.assertEqual(302, self.html_client(self.admin).post(delete_url).status_code)
+            deletion = DeleteAttachmentTicketUpdate.objects.get()
+            detail_url = reverse("ticket-update-detail", kwargs={"root_name": "purchase", "pk": deletion.pk})
+            self.assertNotIn("internal-report", self.html_client(self.user).get(ticket_url).content.decode())
+            self.assertIn("internal-report", self.html_client(self.admin).get(ticket_url).content.decode())
+            for user, visible in ((self.user, False), (self.admin, True)):
+                updates = self.api_get(user, api_url).data["updates"]
+                self.assertEqual(visible, deletion.pk in [tu["id"] for tu in updates])
+                updates = self.api_get(user, list_url).data
+                self.assertEqual(visible, deletion.pk in [tu["id"] for tu in updates])
+                self.assertEqual(200 if visible else 404, self.api_get(user, detail_url).status_code)
+        # Without visibility rules on attachments, the deletion is visible to everyone who sees the ticket
+        self.assertIn("internal-report", self.html_client(self.user).get(ticket_url).content.decode())
+
+    def test_delete_attachment_is_visible_is_default(self):
+        """
+        Without visibility rules on attachments, lists of ticket updates are paginated in the database
+        """
+        self.assertFalse(api.overrides_is_visible(TicketUpdate))
+        with patch.object(AttachmentTicketUpdate, "is_visible", visible_to_superusers):
+            self.assertTrue(api.overrides_is_visible(TicketUpdate))
 
     def test_not_visible_ticket_not_found(self):
         url = reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk})
