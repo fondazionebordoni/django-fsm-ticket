@@ -844,32 +844,9 @@ A `DELETE` will delete a ticket. This is disabled by default and can be enabled 
 
 By making a `PUT` on `ticket/api/{root_name}/{id}/{action}`, the specified action will be applied, using the payload for the creation of the `TicketUpdate`.
 
-The serializer is therefore related to the `ticket_update_model` specified in the `action`, excluding `exclude_fields` on the model (`ts`, `user`, etc are excluded by default). In order to override the serializer you need to specify the `write_serializer` on the ticket update class.
+The serializer is therefore related to the `ticket_update_model` specified in the `action`, excluding `exclude_fields` on the model (`ts`, `user`, etc are excluded by default).
 
-The choices of related fields are limited by `limit_view_querysets(ticket)`, exactly as in the HTML action form. If you write your own `write_serializer`, derive it from `TicketUpdateBaseCreateSerializer`, or include `LimitQuerysetsMixin`, to keep these limits:
-
-```python
-# purchase/serializers.py
-
-from rest_framework import serializers
-
-from django_fsm_ticket.serializers import TicketUpdateBaseCreateSerializer
-from purchase.models import OrderTicketUpdate
-
-class OrderTicketUpdateSerializer(TicketUpdateBaseCreateSerializer):
-    class Meta:
-        model = OrderTicketUpdate
-        fields = ["notes", "price", "seller"]
-
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Price must be positive")
-        return value
-```
-
-Notice that custom `form`s, and the `clean()` method of models, are only used by HTML views: **if the API is enabled, any validation they perform must be replicated in `write_serializer`**, otherwise it can be bypassed through the API. The same applies to the `form` and `write_serializer` of ticket classes.
-
-Currently this view cannot be overridden.
+This view cannot be replaced, but its serializer can: specify `write_serializer` on the ticket update class, deriving it from `TicketUpdateBaseCreateSerializer` (in `django_fsm_ticket.serializers`), which provides the same checks as the generated serializer.
 
 
 #### Ticket update list
