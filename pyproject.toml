@@ -1,6 +1,6 @@
 [project]
 name = "django-fsm-ticket"
-version = "1.5.0rc2"
+version = "1.5.0rc4"
 description = "Simple ticketing and workflow engine based on django-fsm-2"
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ requires-python = ">=3.10,<4"
 dependencies = [
     "django>=4.2",
     "django-fsm-2>=3.0.0",
-    "django-polymorphic>=3.0.0"
+    "django-polymorphic>=4.3.1"
 ]
 
 keywords = ["django", "fsm", "workflow", "ticket", "state-machine", "bpm", "low-code"]
