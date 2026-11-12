@@ -804,7 +804,7 @@ The default view provides
 - pagination using `limit` and `offset` (see below)
 - ordering on all fields except `exclude_fields` declared on the `Ticket` class, the default ordering is descending on the `id` field
 - filtering on all fields except `exclude_fields` declared on the `Ticket` class, plus filtering out closed tickets through the `hide_closed` boolean filter
-- searching on the `search_fields` declared on the `Ticket` class
+- searching on the `search_fields` declared on the `Ticket` class (by default `title` and `description`). If you list a field in `exclude_fields` to hide it from the API, remove it from `search_fields` too, otherwise searches would disclose its content
 
 A ticket can be created by doing a `POST` on the endpoint providing the data for the new ticket. The serializer for ticket creation can be overridden by specifying the `write_serializer` on the `Ticket` class. This will typically be necessary when the ticket has relations to other models that are not handled automatically by the DRF `ModelSerializer`.
 

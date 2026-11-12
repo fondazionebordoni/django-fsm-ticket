@@ -171,7 +171,8 @@ class Ticket(UUIDNaturalKeyPolymorphicMixin, PolymorphicModel):
     - `exclude_fields`: specifies fields to be excluded from input ModelForm. Ordinarily,
       only the `title` and `description` fields are shown; they can be excluded,
       as well as additional fields introduced in subclasses
-    - `search_fields`: which fields are searchable in the list API
+    - `search_fields`: which fields are searchable in the list API. Do not include
+      fields listed in `exclude_fields`: searches would disclose their content
     - `form`: if not `None`, replace automatically generated `ModelForm` with a custom
       form class. Custom form shall work like a `ModelForm`, implementing a method
       `save(commit=True)` which returns the newly created `Ticket` instance.
