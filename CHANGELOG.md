@@ -22,6 +22,9 @@ See the linked advisories for details, affected configurations and workarounds.
   ([GHSA-m935-5m8q-7wgm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-m935-5m8q-7wgm), CVE-xxxx-xxxxx).
 - Attachment deletion is now atomic, and enforces the state and permission of the `delete_attachment` transition
   ([GHSA-w8vm-x6rg-g58x](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-w8vm-x6rg-g58x), CVE-xxxx-xxxxx).
+- REST API: the browsable API is only served when `DEBUG = True`: its HTML forms listed related objects
+  (e.g. notes of all ticket updates, all users) regardless of visibility
+  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
 
 ### Security hardening
 
@@ -68,6 +71,9 @@ See the linked advisories for details, affected configurations and workarounds.
 
 ### Upgrade notes
 
+- **Browsable API:** unless `DEBUG = True`, generated API views no longer serve the browsable API
+  (`?format=api` returns 404, requests accepting only HTML return 406). Custom API views are not affected:
+  use `django_fsm_ticket.api.api_renderers()` to get the same behavior.
 - **Notifications** are sent after the current transaction is committed. In Django `TestCase`s,
   where transactions are never committed, use `self.captureOnCommitCallbacks(execute=True)`
   before checking `mail.outbox`. Exceptions raised by a custom `send_notification()` are now logged

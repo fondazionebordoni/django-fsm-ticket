@@ -895,3 +895,12 @@ This view only allows `GET` requests.
 The endpoint `ticket/api/{root_name}/ticket-update/{id}` provides the details of the given `TicketUpdate`. The serializer can be overridden by specifying `detail_serializer` on the `TicketUpdate` class, as the serializer will be determined after the object has been retrieved.
 
 This view only allows `GET` requests.
+
+
+### Browsable API
+
+The [browsable API](https://www.django-rest-framework.org/topics/browsable-api/) of Django REST framework is a development tool: the generated API views of `django-fsm-ticket` only provide it when `DEBUG = True`. Otherwise `BrowsableAPIRenderer` (and the renderers derived from it) are removed from the renderers configured in `DEFAULT_RENDERER_CLASSES`, and JSON is used if no renderer is left.
+
+Its HTML forms list all the choices of related fields and filters (e.g. all the users, all the ticket updates), regardless of ticket visibility: never expose a site with `DEBUG = True` and real data, as recommended by Django in any case.
+
+This does not apply to your own API views (`list_api_view`, `detail_api_view`, `ticket_update_list_api_view`): if you want the same behavior, set `renderer_classes = api_renderers()`, importing `api_renderers` from `django_fsm_ticket.api`.

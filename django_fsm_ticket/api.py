@@ -11,8 +11,11 @@ from rest_framework.exceptions import APIException, PermissionDenied, Validation
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import Http404
@@ -105,6 +108,20 @@ class TicketPagination(LimitOffsetPagination):
         return min(limit, max_limit)
 
 
+
+def api_renderers():
+    """
+    Return the renderer classes of generated API views: the browsable API is only available in DEBUG mode
+
+    The browsable API is a development tool, and its HTML forms may enumerate related objects.
+    Other configured renderers are kept; JSON is used if no renderer is left.
+    """
+    renderers = list(api_settings.DEFAULT_RENDERER_CLASSES)
+    if not settings.DEBUG:
+        renderers = [r for r in renderers if not issubclass(r, BrowsableAPIRenderer)]
+    return renderers or [JSONRenderer]
+
+
 def orderable_fields(model, exclude_fields):
     """
     Return the names of the fields of `model` which can be used for ordering
@@ -131,6 +148,7 @@ def ticket_list_factory(request, root_name, *args, **kwargs):
         view access.
         """
 
+        renderer_classes = api_renderers()
         permission_classes = [
             ticket_list_permission_factory(ticket_engine.TicketClass),
         ]
@@ -220,6 +238,7 @@ def ticket_detail_factory(request, root_name, *args, **kwargs):
             view access.
             """
 
+            renderer_classes = api_renderers()
             permission_classes = [
                 IsAuthenticated,
                 # Visibility first: non-visible tickets are not found (404), rather than forbidden (403)
@@ -263,6 +282,7 @@ def ticket_action_factory(request, root_name, action_name, *args, **kwargs):
         view access.
         """
 
+        renderer_classes = api_renderers()
         permission_classes = [
             IsAuthenticated,
             PrefilteredTicketVisibilityPermission,
@@ -340,6 +360,7 @@ def ticket_update_list_factory(request, root_name, *args, **kwargs):
         do not disclose anything about non-visible ticket updates; this has a cost which is
         linear in the number of ticket updates in the queryset (each ticket is loaded only once).
         """
+        renderer_classes = api_renderers()
         permission_classes = [
             ticket_list_permission_factory(ticket_engine.TicketClass),
         ]
@@ -441,6 +462,7 @@ def ticket_update_detail_factory(request, root_name, *args, **kwargs):
         view access.
         """
 
+        renderer_classes = api_renderers()
         permission_classes = [
             IsAuthenticated,
             # Visibility first: non-visible ticket updates are not found (404), rather than forbidden (403)
