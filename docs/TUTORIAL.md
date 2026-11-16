@@ -788,6 +788,9 @@ Assuming that `django-fsm-ticket` has been configured under the path `ticket`, a
 - `ticket/api/purchase/ticket-update/{id}`
   - GET: details of a ticket update referring to a `PurchaseTicket`
 
+- `ticket/api/purchase/ticket-update/{id}/download`
+  - GET: file of an attachment ticket update referring to a `PurchaseTicket`
+
 they are described in more detail below.
 
 
@@ -869,7 +872,7 @@ The default view provides
 This view only allows `GET` requests.
 
 
-> **Note:** for an `AttachmentTicketUpdate`, the `file` field is the URL of the download view of `django-fsm-ticket`, which checks the visibility of the ticket and of the ticket update, not the URL of the file in the storage. It is `null` if there is no file, or if the attachment has been deleted (except for superusers). The download view is a regular Django view: it authenticates users through the Django session, not through the authentication classes of Django REST framework. If you write your own serializers for attachments, include `AttachmentDownloadUrlMixin` (from `django_fsm_ticket.serializers`) to get the same representation.
+> **Note:** for an `AttachmentTicketUpdate`, the `file` field is the URL of the attachment download endpoint (see below), not the URL of the file in the storage. It is `null` if there is no file, or if the attachment has been deleted (except for superusers). If you write your own serializers for attachments, include `AttachmentDownloadUrlMixin` (from `django_fsm_ticket.serializers`) to get the same representation.
 
 
 #### Ticket update detail
@@ -877,6 +880,13 @@ This view only allows `GET` requests.
 The endpoint `ticket/api/{root_name}/ticket-update/{id}` provides the details of the given `TicketUpdate`. The serializer can be overridden by specifying `detail_serializer` on the `TicketUpdate` class, as the serializer will be determined after the object has been retrieved.
 
 This view only allows `GET` requests.
+
+
+#### Attachment download
+
+The endpoint `ticket/api/{root_name}/ticket-update/{id}/download` returns the file of an `AttachmentTicketUpdate` as an attachment, rather than JSON. It authenticates users and checks visibility as the ticket update detail endpoint: it returns 404 if the ticket update is not visible, is not an attachment, has no file, or has been deleted (except for superusers).
+
+With session authentication, the URL can be also used as a link in HTML pages. With other authentication methods (e.g. Token, JWT), clients have to send their credentials, as for the other endpoints.
 
 
 ### Browsable API

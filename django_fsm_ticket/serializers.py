@@ -98,10 +98,11 @@ def ticket_detail_serializer_factory(ticket_engine):
 
 class AttachmentDownloadUrlMixin:
     """
-    Represent the `file` of attachment ticket updates as the URL of the download view
+    Represent the `file` of attachment ticket updates as the URL of the download endpoint of the API
 
-    The download view checks the visibility of the ticket and of the ticket update, while the URL
-    of the file in the storage is not subject to any check (and requires the storage to be served).
+    The download endpoint authenticates users as the other API endpoints, and checks the visibility
+    of the ticket and of the ticket update, while the URL of the file in the storage is not subject
+    to any check (and requires the storage to be served).
     As in HTML views, deleted attachments can only be downloaded by superusers.
 
     To be used in serializers of ticket updates, e.g. in a custom `list_serializer`.
@@ -116,7 +117,13 @@ class AttachmentDownloadUrlMixin:
             elif instance.deleted and (request is None or not request.user.is_superuser):
                 data["file"] = None
             else:
-                url = reverse("ticket_download_attachment", args=[instance.pk, instance.uuid])
+                # In API views, the root name is in the URL: no query to load the ticket
+                resolver_match = getattr(request, "resolver_match", None)
+                root_name = resolver_match.kwargs.get("root_name") if resolver_match else None
+                url = reverse(
+                    "ticket-update-download",
+                    kwargs={"root_name": root_name or instance.ticket.root_name, "pk": instance.pk},
+                )
                 data["file"] = request.build_absolute_uri(url) if request is not None else url
         return data
 

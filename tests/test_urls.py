@@ -13,6 +13,7 @@ API_URL_NAMES = {
     "ticket-list",
     "ticket-update-list",
     "ticket-update-detail",
+    "ticket-update-download",
     "ticket-detail",
     "ticket-detail-action",
 }

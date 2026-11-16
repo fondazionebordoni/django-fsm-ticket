@@ -1,14 +1,16 @@
 import base64
 import json
+import tempfile
 from unittest.mock import patch
 
 from rest_framework.test import APIClient
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from django_fsm_ticket.models import Ticket, TicketUpdate
+from django_fsm_ticket.models import AttachmentTicketUpdate, Ticket, TicketUpdate
 
 from tests.models import PurchaseTicket
 
@@ -112,3 +114,17 @@ class NonSessionAuthenticationTest(TestCase):
         response = client.get(self.list_url)
         self.assertEqual([self.ticket.pk], [t["id"] for t in response.data])
         self.assertEqual(404, client.get(self.detail_url(self.other_ticket)).status_code)
+
+    def test_attachment_download_basic_auth(self):
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            PurchaseTicket.objects.filter(pk=self.ticket.pk).update(state="ordered")
+            self.ticket.refresh_from_db()
+            self.ticket.purchased(
+                AttachmentTicketUpdate(user=self.user, file=SimpleUploadedFile("a.pdf", b"content"))
+            )
+            attachment = AttachmentTicketUpdate.objects.get()
+            url = reverse("ticket-update-download", kwargs={"root_name": "purchase", "pk": attachment.pk})
+            response = self.basic_client(self.user).get(url)
+            self.assertEqual(200, response.status_code)
+            self.assertEqual(b"content", b"".join(response.streaming_content))
+            self.assertEqual(404, self.basic_client(self.other_user).get(url).status_code)

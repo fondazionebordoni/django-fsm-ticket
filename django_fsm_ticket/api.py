@@ -10,6 +10,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.response import Response
@@ -19,11 +20,14 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import Http404
+from django.shortcuts import get_object_or_404
+from django.utils.cache import patch_cache_control
 from django.utils.translation import gettext as _
 
 from django_fsm_ticket.base_views import ActionError
 from django_fsm_ticket.filters import TicketUpdateFilter, ticket_filter_factory
 from django_fsm_ticket.models import (
+    AttachmentTicketUpdate,
     DeleteAttachmentTicketUpdate,
     Ticket,
     TicketUpdate,
@@ -42,7 +46,7 @@ from django_fsm_ticket.serializers import (
     ticket_update_create_serializer_factory,
     ticket_update_list_serializer_factory,
 )
-from django_fsm_ticket.utils import import_path_or_string
+from django_fsm_ticket.utils import import_path_or_string, serve_modelfile
 
 
 class Conflict(APIException):
@@ -529,3 +533,33 @@ def ticket_update_detail_factory(request, root_name, *args, **kwargs):
             return Response(serializer.data)
 
     return TicketUpdateDetailApiView.as_view()(request, *args, **kwargs)
+
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def attachment_download(request, root_name, pk):
+    """
+    Download the file of an attachment ticket update, authenticating users as the other API endpoints
+
+    As in HTML views, non-visible attachments are not found, and deleted attachments
+    can only be downloaded by superusers.
+    """
+    try:
+        ticket_class = engine_registry[root_name].TicketClass
+    except KeyError:
+        raise Http404()
+    attachment = get_object_or_404(
+        AttachmentTicketUpdate,
+        pk=pk,
+        ticket__polymorphic_ctype=ContentType.objects.get_for_model(ticket_class),
+    )
+    if not attachment.ticket.check_visibility(request) or not attachment.is_visible(request):
+        raise Http404()
+    if not attachment.file or (attachment.deleted and not request.user.is_superuser):
+        raise Http404()
+    response = serve_modelfile(attachment.file, attachment.name)
+    # The response depends on the credentials of the user
+    patch_cache_control(response, private=True)
+    return response

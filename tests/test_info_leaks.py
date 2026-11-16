@@ -79,13 +79,17 @@ class InfoLeaksTest(TestCase):
             for file in files:
                 self.assertEqual(hidden, file is None)
 
+    def attachment(self, name="a.pdf", content=b"content"):
+        self.ticket.purchased(AttachmentTicketUpdate(user=self.user, file=SimpleUploadedFile(name, content)))
+        return AttachmentTicketUpdate.objects.get()
+
+    def download_url(self, ticket_update):
+        return reverse("ticket-update-download", kwargs={"root_name": "purchase", "pk": ticket_update.pk})
+
     def test_attachment_file_is_download_url(self):
-        """The API provides the URL of the download view, not the URL of the file in the storage"""
-        self.ticket.purchased(AttachmentTicketUpdate(user=self.user, file=SimpleUploadedFile("a.pdf", b"content")))
-        attachment = AttachmentTicketUpdate.objects.get()
-        download_url = "http://testserver" + reverse(
-            "ticket_download_attachment", args=[attachment.pk, attachment.uuid]
-        )
+        """The API provides the URL of its download endpoint, not the URL of the file in the storage"""
+        attachment = self.attachment()
+        download_url = "http://testserver" + self.download_url(attachment)
         urls = [
             reverse("ticket-update-list", kwargs={"root_name": "purchase"}),
             reverse("ticket-detail", kwargs={"root_name": "purchase", "pk": self.ticket.pk}),
@@ -97,14 +101,43 @@ class InfoLeaksTest(TestCase):
                 if isinstance(data, dict):
                     data = data.get("updates", [data])
                 self.assertEqual([download_url], [tu["file"] for tu in data if "file" in tu])
-        # The URL is subject to visibility checks
-        client = Client()
-        client.force_login(self.user)
-        response = client.get(download_url)
+
+    def test_attachment_download(self):
+        attachment = self.attachment()
+        # Session authentication: the URL can also be used as a link in HTML pages
+        response = self.html_client(self.user).get(self.download_url(attachment))
         self.assertEqual(200, response.status_code)
         self.assertEqual(b"content", b"".join(response.streaming_content))
-        client.force_login(self.other_user)
-        self.assertEqual(302, client.get(download_url).status_code)
+        self.assertEqual('attachment; filename="a.pdf"', response["Content-Disposition"])
+        self.assertIn("private", response["Cache-Control"])
+
+    def test_attachment_download_visibility(self):
+        attachment = self.attachment()
+        url = self.download_url(attachment)
+        self.assertIn(APIClient().get(url).status_code, (401, 403))
+        self.assertEqual(404, self.api_get(self.other_user, url).status_code)
+        missing = reverse("ticket-update-download", kwargs={"root_name": "purchase", "pk": attachment.pk + 100})
+        self.assertEqual(404, self.api_get(self.user, missing).status_code)
+        with patch.object(AttachmentTicketUpdate, "is_visible", visible_to_superusers):
+            self.assertEqual(404, self.api_get(self.user, url).status_code)
+            self.assertEqual(200, self.api_get(self.admin, url).status_code)
+
+    def test_attachment_download_not_an_attachment(self):
+        self.ticket.comment(TicketUpdate(user=self.user, notes="No attachment"))
+        url = self.download_url(TicketUpdate.objects.get())
+        self.assertEqual(404, self.api_get(self.user, url).status_code)
+
+    def test_attachment_download_without_file(self):
+        self.ticket.purchased(AttachmentTicketUpdate(user=self.user))
+        url = self.download_url(AttachmentTicketUpdate.objects.get())
+        self.assertEqual(404, self.api_get(self.user, url).status_code)
+
+    def test_deleted_attachment_download(self):
+        attachment = self.attachment()
+        AttachmentTicketUpdate.objects.update(deleted=True)
+        url = self.download_url(attachment)
+        self.assertEqual(404, self.api_get(self.user, url).status_code)
+        self.assertEqual(200, self.api_get(self.admin, url).status_code)
 
     def test_attachment_without_file(self):
         self.ticket.purchased(AttachmentTicketUpdate(user=self.user))

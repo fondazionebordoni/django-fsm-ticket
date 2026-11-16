@@ -63,6 +63,7 @@ if api_enabled:
         path(f"{api_prefix}/<str:root_name>", api.ticket_list_factory, name="ticket-list"),
         path(f"{api_prefix}/<str:root_name>/ticket-update", api.ticket_update_list_factory, name="ticket-update-list"),
         path(f"{api_prefix}/<str:root_name>/ticket-update/<int:pk>", api.ticket_update_detail_factory, name="ticket-update-detail"),
+        path(f"{api_prefix}/<str:root_name>/ticket-update/<int:pk>/download", api.attachment_download, name="ticket-update-download"),
         path(f"{api_prefix}/<str:root_name>/<int:pk>", api.ticket_detail_factory, name="ticket-detail"),
         path(f"{api_prefix}/<str:root_name>/<int:pk>/<str:action_name>", api.ticket_action_factory, name="ticket-detail-action"),
     ]

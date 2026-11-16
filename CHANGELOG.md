@@ -38,8 +38,8 @@ See the linked advisories for details, affected configurations and workarounds.
 - Attachment downloads are streamed from storage, without temporary copies.
 - REST API: ordering on fields listed in `exclude_fields` is no longer allowed.
 - REST API: the file of deleted attachments is only shown to superusers, as in HTML views.
-- REST API: the `file` field of attachment ticket updates is now the URL of the download view, which enforces
-  visibility, instead of the URL of the file in the storage.
+- REST API: the `file` field of attachment ticket updates is now the URL of a new download endpoint, which
+  authenticates users and enforces visibility as the other endpoints, instead of the URL of the file in the storage.
 - REST API: modifying a ticket (`PUT`/`PATCH`) now locks it and reloads its state, so that it can no longer
   undo an action committed in the meantime. `can_modify()` is checked again against the current state.
 - Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API).
@@ -52,6 +52,8 @@ See the linked advisories for details, affected configurations and workarounds.
 
 ### Added
 
+- REST API: attachment download endpoint (`.../ticket-update/<id>/download`), with the authentication methods
+  of Django REST framework.
 - `FSM_TICKET_API_PREFIX` can be set to `None` to disable the REST API. Invalid values (non-strings, empty prefixes)
   now raise `ImproperlyConfigured`.
 - `API_MAX_LIMIT` option of `FSM_TICKET_CONFIG`: bounds the page size of list endpoints.
@@ -90,9 +92,12 @@ See the linked advisories for details, affected configurations and workarounds.
 - **Dependencies:** `django-polymorphic` 4.3.1 or later is now required: earlier versions conflict with
   the natural keys of tickets and ticket updates.
 - **Attachments in the REST API:** the `file` field of attachment ticket updates contains the URL of the download
-  view (`.../download_attachment/<id>/<uuid>`) instead of the URL of the file in the storage (e.g. `/media/invoice.pdf`).
-  Clients that built their own links from the old value must use the new one as it is. The download view
-  authenticates users through the Django session. Custom serializers should include `AttachmentDownloadUrlMixin`.
+  endpoint of the API (`.../api/<root_name>/ticket-update/<id>/download`) instead of the URL of the file in the storage
+  (e.g. `/media/invoice.pdf`). Clients must download the file with their API credentials, as for the other endpoints:
+  with authentication methods other than the session, a plain link in an HTML page does not work. Clients that built
+  their own links from the old value must use the new one as it is. Custom serializers should include
+  `AttachmentDownloadUrlMixin`. Namespaces are not supported: include `django_fsm_ticket.urls` without a namespace,
+  otherwise the REST API fails to build this URL (as HTML views already did).
 - **Ticket modification via API** runs in a transaction and locks the ticket, as actions do. If `can_modify()`
   depends on the state of the ticket, a modification is refused (403) when a concurrent action has changed
   the state in the meantime.
