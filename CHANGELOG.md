@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - YYYY-MM-DD
+## [1.5.0] - 2026-11-16
 
 ### Security
 
@@ -13,18 +13,18 @@ This release fixes several security issues. All users are encouraged to upgrade.
 See the linked advisories for details, affected configurations and workarounds.
 
 - REST API: internal ticket fields (`state`, `ts`, `last_update`, `user`) are now read-only
-  ([GHSA-v59j-g75x-9xmm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v59j-g75x-9xmm), CVE-xxxx-xxxxx).
+  ([GHSA-v59j-g75x-9xmm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v59j-g75x-9xmm)).
 - REST API: the action endpoint now enforces `Ticket.is_visible()`
-  ([GHSA-v4xh-28jr-f5v5](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v4xh-28jr-f5v5), CVE-xxxx-xxxxx).
+  ([GHSA-v4xh-28jr-f5v5](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-v4xh-28jr-f5v5)).
 - Notifications and reminders now honour `TicketUpdate.is_visible()`
-  ([GHSA-58xg-c7pj-9qqp](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-58xg-c7pj-9qqp), CVE-xxxx-xxxxx).
+  ([GHSA-58xg-c7pj-9qqp](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-58xg-c7pj-9qqp)).
 - REST API: counts and pages of list endpoints no longer depend on non-visible items
-  ([GHSA-m935-5m8q-7wgm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-m935-5m8q-7wgm), CVE-xxxx-xxxxx).
+  ([GHSA-m935-5m8q-7wgm](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-m935-5m8q-7wgm)).
 - Attachment deletion is now atomic, and enforces the state and permission of the `delete_attachment` transition
-  ([GHSA-w8vm-x6rg-g58x](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-w8vm-x6rg-g58x), CVE-xxxx-xxxxx).
+  ([GHSA-w8vm-x6rg-g58x](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-w8vm-x6rg-g58x)).
 - REST API: the browsable API is only served when `DEBUG = True`: its HTML forms listed related objects
   (e.g. notes of all ticket updates, all users) regardless of visibility
-  ([GHSA-xxxx-xxxx-xxxx](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-xxxx-xxxx-xxxx), CVE-xxxx-xxxxx).
+  ([GHSA-vxpr-pw9v-g3c3](https://github.com/fondazionebordoni/django-fsm-ticket/security/advisories/GHSA-vxpr-pw9v-g3c3)).
 
 ### Security hardening
 
@@ -42,7 +42,8 @@ See the linked advisories for details, affected configurations and workarounds.
   authenticates users and enforces visibility as the other endpoints, instead of the URL of the file in the storage.
 - REST API: modifying a ticket (`PUT`/`PATCH`) now locks it and reloads its state, so that it can no longer
   undo an action committed in the meantime. `can_modify()` is checked again against the current state.
-- Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API).
+- Non-visible tickets and ticket updates now consistently look like non-existing ones (404 in the REST API,
+  redirect to the login page in HTML views).
 - Invalid attachment UUIDs in URLs now return 404 instead of 500.
 - REST API: `ActionError` raised by actions now returns 400 instead of 500, as in HTML views.
 - The ticket update that tracks the deletion of an attachment (`DeleteAttachmentTicketUpdate`) is now visible
@@ -98,6 +99,11 @@ See the linked advisories for details, affected configurations and workarounds.
   their own links from the old value must use the new one as it is. Custom serializers should include
   `AttachmentDownloadUrlMixin`. Namespaces are not supported: include `django_fsm_ticket.urls` without a namespace,
   otherwise the REST API fails to build this URL (as HTML views already did).
+- **Attachment storage:** attachments are protected only by the download views of `django-fsm-ticket`.
+  Make sure that the storage where they are saved (by default `MEDIA_ROOT`) is not served by your web server,
+  or by a public bucket: see the tutorial.
+- **Search fields:** if you list a field in `exclude_fields` to hide it from the REST API, remove it from
+  `search_fields` too, otherwise searches would disclose its content.
 - **Ticket modification via API** runs in a transaction and locks the ticket, as actions do. If `can_modify()`
   depends on the state of the ticket, a modification is refused (403) when a concurrent action has changed
   the state in the meantime.
