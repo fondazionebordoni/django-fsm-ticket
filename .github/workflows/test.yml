@@ -13,23 +13,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+          enable-cache: true
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          export PATH="$HOME/.local/bin:$PATH"
-
-      - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry install --no-root --all-extras
+      - name: Install dependencies
+        run: uv sync --locked --all-extras
 
       - name: Run Ruff checks
-        run: poetry run ruff check .
+        run: uv run ruff check .
 
       - name: Run unit tests
-        run: poetry run python runtests.py
+        run: uv run python runtests.py
