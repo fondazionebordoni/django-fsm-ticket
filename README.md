@@ -134,13 +134,13 @@ If you'd like to explore a fully working example, we offer a [demo Django projec
 You can run the project locally by cloning the repository and executing the following commands:
 
 ```bash
-# Make sure poetry is installed
-pip install --user poetry
+# Make sure uv is installed (see https://docs.astral.sh/uv/)
+pip install --user uv
 
-poetry install --extras "dev"
-eval "$(poetry env activate)"
+uv sync
+source .venv/bin/activate
 # or, if you use `fish`:
-# eval (poetry env activate)
+# source .venv/bin/activate.fish
 
 cd example_project
 

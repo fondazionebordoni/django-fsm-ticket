@@ -20,32 +20,28 @@ cd django-fsm-ticket
 
 ### 2. Set up the development environment
 
-This project uses [Poetry](https://python-poetry.org/) for dependency management and packaging.
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and packaging.
 
-If Poetry is not installed, you can install it with:
-
-```
-pip install --user poetry
-```
+If uv is not installed, follow the [installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
 Then install all dependencies, including development tools:
 
 ```
-poetry install --all-extras
+uv sync --all-extras
 ```
 
-This will create a virtual environment and install both runtime and development dependencies. It will also allow you to run the example project.
+This will create a virtual environment in `.venv` and install both runtime and development dependencies. It will also allow you to run the example project.
 
 To activate the virtual environment:
 
 ```bash
-eval "$(poetry env activate)"
+source .venv/bin/activate
 ```
 
 or, if you use `fish`:
 
 ```fish
-eval (poetry env activate)
+source .venv/bin/activate.fish
 ```
 
 ### 3. Run the test suite
@@ -53,7 +49,7 @@ eval (poetry env activate)
 To run tests:
 
 ```
-poetry run python runtests.py
+uv run python runtests.py
 ```
 
 (or simply ```python runtests.py``` if you activated the virtual environment).
@@ -64,7 +60,7 @@ poetry run python runtests.py
 If you make changes to the models, you can make migrations without a functioning Django app:
 
 ```
-poetry run python makemigrations.py
+uv run python makemigrations.py
 ```
 
 ### 5. Running the example project
@@ -72,7 +68,7 @@ poetry run python makemigrations.py
 We provide a Django project that uses `django-fsm-ticket` for your convenience:
 
 ```
-eval "$(poetry env activate)"
+source .venv/bin/activate
 cd example_project
 
 # Setup database
@@ -95,8 +91,8 @@ Follow [PEP 8](https://peps.python.org/pep-0008/) conventions and use **Ruff** (
 Before submitting a pull request, make sure that:
 
 ```
-poetry run ruff check .
-poetry run python runtests.py
+uv run ruff check .
+uv run python runtests.py
 ```
 
 run successfully without errors.
@@ -163,10 +159,10 @@ Step-by-step procedure
 
 ### 1. Update the project version
 
-Update the version in `pyproject.toml` using Poetry:
+Update the version in `pyproject.toml` (and `uv.lock`) using uv:
 
 ```bash
-poetry version X.Y.Z
+uv version X.Y.Z
 ```
 
 This ensures that the version declared in the source code matches the release version.
@@ -203,7 +199,7 @@ git push origin main --tags
 
 Pushing the tag triggers the GitHub Actions workflow, which will:
 
-- build the source distribution and wheel using Poetry
+- build the source distribution and wheel using uv
 - publish the package to **PyPI**
 - create a **GitHub Release** associated with the tag
   - release notes are generated automatically

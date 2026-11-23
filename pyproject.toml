@@ -8,6 +8,7 @@ authors = [
     { name = "Elin Wedlund", email = "ewedlund@fub.it" },
 ]
 license = "MPL-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<4"
 dependencies = [
     "django>=4.2",
@@ -23,7 +24,6 @@ classifiers = [
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -42,23 +42,22 @@ Issues = "https://github.com/fondazionebordoni/django-fsm-ticket/issues"
 
 
 [project.optional-dependencies]
-dev = [
-    "coverage>=7.9.1",
-    "ruff>=0.14.2,<0.15.0",
-    "django-constance",
-]
 api = [
     "djangorestframework>=3.16.1",
     "django-filter>=25.2",
 ]
 
-[build-system]
-requires = ["poetry-core>=1.9.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry]
-# Only include `django_fsm_ticket` in published package
-# (i.e. exclude `example_project` etc.)
-packages = [
-    { include = "django_fsm_ticket" }
+[dependency-groups]
+dev = [
+    "coverage>=7.9.1",
+    "ruff>=0.14.2,<0.15.0",
+    "django-constance",
 ]
+
+[build-system]
+requires = ["uv_build>=0.9.0,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "django_fsm_ticket"
+module-root = ""
